@@ -1,10 +1,8 @@
+github.com/gopherjs/gopherjs v0.0.0-20161023184700-6f5a3c4a73ba h1:xryw1OKbAIiEjwQM4TUdIvOLolJK5/LjhEE9pFu4j70=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/jcelliott/turnpike v0.0.0-20210629143239-1dadcad507a3 h1:3mKNq3w7/2tbnsut6aIZ2TGzOtUZoeccaJn2VD+DVaA=
-github.com/jcelliott/turnpike v0.0.0-20210629143239-1dadcad507a3/go.mod h1:kbcc9bKW5bloaZU4bsYhQt1fvOPmRFS7Q4Hf6HtbvAY=
-github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d h1:VhgPp6v9qf9Agr/56bj7Y/xa04UccTW04VP0Qed4vnQ=
-github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d/go.mod h1:YUTz3bUH2ZwIWBy3CJBeOBEugqcmXREj14T+iG/4k4U=
+github.com/jtolds/gls v4.20.0+incompatible h1:xdiiI2gbIgH/gLH7ADydsJ1uDOEzR8yvV7C0MuV77Wo=
+github.com/smartystreets/assertions v0.0.0-20160707190355-2063fd1cc7c9 h1:Kg4w5zDU3jgGRghptweqKKNAADO4nqR0Grd9WomB8H4=
+github.com/smartystreets/goconvey v1.6.3-0.20160928205523-7befa7fd6e2e h1:RB96eLFixlyzvyxqzwuoUC3e61oDkwEJqn/bW5WkNR4=
 github.com/ugorji/go/codec v1.2.11 h1:BMaWp1Bb6fHwEtbplGBGJ498wD+LKlNSl25MjdZY4dU=
 github.com/ugorji/go/codec v1.2.11/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
-golang.org/x/net v0.8.0 h1:Zrh2ngAOFYneWTAIAPethzeaQLuHwhuBkuV6ZiRnUaQ=
-golang.org/x/net v0.8.0/go.mod h1:QVkue5JL9kW//ek3r6jTKnTFis1tRmNAW2P1shuFdJc=

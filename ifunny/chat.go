@@ -1,6 +1,10 @@
 package ifunny
 
-import "github.com/gastrodon/turnpike"
+import (
+	"net/http"
+
+	"github.com/jcelliott/turnpike"
+)
 
 const chatRoot = "wss://chat.ifunny.co/chat"
 
@@ -15,9 +19,10 @@ type chat struct {
 }
 
 func connectChat(bearer, cookie string) (Chat, error) {
-	ws := turnpike.NewClient()
-	if err := ws.Connect(chatRoot, "http://localghost", cookie); err != nil {
-		panic("connect: " + err.Error())
+	header := http.Header{"Cookie": []string{cookie}}
+	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, header, nil, nil)
+	if err != nil {
+		panic(err)
 	}
 
 	return &chat{ws, bearer}, nil
