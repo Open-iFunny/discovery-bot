@@ -2,6 +2,7 @@ package ifunny
 
 import (
 	"github.com/jcelliott/turnpike"
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -10,8 +11,7 @@ const (
 )
 
 type Chat interface {
-	Subscribe(id string) (<-chan interface{}, func())
-	Publish(topic string, event interface{}) error
+	Chats(userID string) <-chan *WSChat
 }
 
 type chat struct {
@@ -39,10 +39,21 @@ func connectChat(bearer string) (Chat, error) {
 	return &chat{ws, bearer, hello}, nil
 }
 
-func (chat *chat) Subscribe(topic string) (<-chan interface{}, func()) {
-	panic("unimplemented")
+func (chat *chat) Chats(userID string) <-chan *WSChat {
+	result := make(chan *WSChat)
+	chat.ws.Subscribe(topic("user."+userID+".chats"), nil, func(args []interface{}, kwargs map[string]interface{}) {
+		for _, chatRaw := range kwargs["chats"].([]interface{}) {
+			wsChat := new(WSChat)
+			mapstructure.Decode(chatRaw, wsChat)
+			result <- wsChat
+		}
+
+		close(result)
+	})
+
+	return result
 }
 
-func (chat *chat) Publish(topic string, event interface{}) error {
-	panic("unimplemented")
+func (chat *chat) Invites() {
+
 }
