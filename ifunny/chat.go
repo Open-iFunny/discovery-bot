@@ -4,7 +4,10 @@ import (
 	"github.com/jcelliott/turnpike"
 )
 
-const chatRoot = "wss://chat.ifunny.co/chat"
+const (
+	chatRoot      = "wss://chat.ifunny.co/chat"
+	chatNamespace = "co.fun.chat"
+)
 
 type Chat interface {
 	Subscribe(id string) (<-chan interface{}, func())
@@ -16,6 +19,8 @@ type chat struct {
 	bearer string
 	hello  map[string]interface{}
 }
+
+func topic(name string) string { return chatNamespace + "." + name }
 
 func connectChat(bearer string) (Chat, error) {
 	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
