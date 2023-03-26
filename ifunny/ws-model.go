@@ -8,3 +8,6 @@ type WSChat struct {
 type WSChats struct {
 	Chats string `mapstructure:"chats"`
 }
+
+type WSInvite struct {
+}

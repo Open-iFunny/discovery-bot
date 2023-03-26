@@ -1,6 +1,8 @@
 package ifunny
 
 import (
+	"fmt"
+
 	"github.com/jcelliott/turnpike"
 	"github.com/mitchellh/mapstructure"
 )
@@ -12,6 +14,7 @@ const (
 
 type Chat interface {
 	Chats(userID string) <-chan *WSChat
+	Invites(userID string) <-chan *WSInvite
 }
 
 type chat struct {
@@ -56,6 +59,21 @@ func (chat *chat) Chats(userID string) <-chan *WSChat {
 	return result
 }
 
-func (chat *chat) Invites() {
+func (chat *chat) Invites(userID string) <-chan *WSInvite {
+	result := make(chan *WSInvite)
+	chat.ws.Subscribe(topic("user."+userID+".invites"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
+		if kwargs["invites"] == nil {
+			return
+		}
 
+		for _, invRaw := range kwargs["invites"].([]interface{}) {
+			fmt.Printf("invite: %+v\n", invRaw)
+
+			wsInvite := new(WSInvite)
+			mapstructure.Decode(invRaw, wsInvite)
+			result <- wsInvite
+		}
+	})
+
+	return result
 }
