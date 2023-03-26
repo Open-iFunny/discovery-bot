@@ -18,16 +18,10 @@ func main() {
 		panic("IFUNNY_USER_AGENT must be set")
 	}
 
-	cookie := os.Getenv("IFUNNY_CHAT_COOKIE")
-	if userAgent == "" {
-		panic("IFUNNY_CHAT_COOKIE must be set")
-	}
-
 	client := ifunny.MakeClient("bearer "+bearer, userAgent)
-
 	client.Request("GET", "/v4", nil)
 
-	_, err := client.Connect(bearer, cookie)
+	_, err := client.Connect(bearer)
 	if err != nil {
 		panic(err)
 	}

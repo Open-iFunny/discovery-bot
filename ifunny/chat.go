@@ -1,8 +1,6 @@
 package ifunny
 
 import (
-	"net/http"
-
 	"github.com/jcelliott/turnpike"
 )
 
@@ -16,16 +14,26 @@ type Chat interface {
 type chat struct {
 	ws     *turnpike.Client
 	bearer string
+	hello  map[string]interface{}
 }
 
-func connectChat(bearer, cookie string) (Chat, error) {
-	header := http.Header{"Cookie": []string{cookie}}
-	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, header, nil, nil)
+func connectChat(bearer string) (Chat, error) {
+	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	return &chat{ws, bearer}, nil
+	ws.Auth = map[string]turnpike.AuthFunc{
+		"ticket": func(_, _ map[string]interface{}) (string, map[string]interface{}, error) {
+			return bearer, nil, nil
+		},
+	}
+	hello, err := ws.JoinRealm("co.fun.chat.ifunny", nil)
+	if err != nil {
+		panic(err)
+	}
+
+	return &chat{ws, bearer, hello}, nil
 }
 
 func (chat *chat) Subscribe(topic string) (<-chan interface{}, func()) {

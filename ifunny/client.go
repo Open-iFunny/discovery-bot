@@ -12,7 +12,7 @@ const (
 
 type Client interface {
 	Request(method, path string, body io.Reader) (*http.Response, error)
-	Connect(bearer, cookie string) (Chat, error)
+	Connect(bearer string) (Chat, error)
 }
 
 func MakeClient(authorization, userAgent string) Client {
@@ -36,6 +36,6 @@ func (client *staticClient) Request(method, path string, body io.Reader) (*http.
 	return client.http.Do(request)
 }
 
-func (client *staticClient) Connect(bearer, cookie string) (Chat, error) {
-	return connectChat(bearer, cookie)
+func (client *staticClient) Connect(bearer string) (Chat, error) {
+	return connectChat(bearer)
 }
