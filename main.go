@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
-	"io"
 	"os"
+	"time"
 
 	"github.com/gastrodon/popplio/ifunny"
 )
@@ -19,16 +18,19 @@ func main() {
 		panic("IFUNNY_USER_AGENT must be set")
 	}
 
+	cookie := os.Getenv("IFUNNY_CHAT_COOKIE")
+	if userAgent == "" {
+		panic("IFUNNY_CHAT_COOKIE must be set")
+	}
+
 	client := ifunny.MakeClient("bearer "+bearer, userAgent)
-	response, err := client.Request("GET", "/account", nil)
+
+	client.Request("GET", "/v4", nil)
+
+	_, err := client.Connect(bearer, cookie)
 	if err != nil {
 		panic(err)
 	}
 
-	data, err := io.ReadAll(response.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("%s", data)
+	<-time.After(4 * time.Second)
 }

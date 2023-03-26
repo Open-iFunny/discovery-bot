@@ -5,11 +5,14 @@ import (
 	"net/http"
 )
 
-const apiRoot = "https://api.ifunny.mobi/v4"
-const projectID = "iFunny"
+const (
+	apiRoot   = "https://api.ifunny.mobi/v4"
+	projectID = "iFunny"
+)
 
 type Client interface {
 	Request(method, path string, body io.Reader) (*http.Response, error)
+	Connect(bearer, cookie string) (Chat, error)
 }
 
 func MakeClient(authorization, userAgent string) Client {
@@ -31,4 +34,8 @@ func (client *staticClient) Request(method, path string, body io.Reader) (*http.
 	request.Header.Add("user-agent", client.userAgeng)
 	request.Header.Add("ifunny-project-id", projectID)
 	return client.http.Do(request)
+}
+
+func (client *staticClient) Connect(bearer, cookie string) (Chat, error) {
+	return connectChat(bearer, cookie)
 }
