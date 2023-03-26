@@ -24,11 +24,9 @@ func connectChat(bearer string) (Chat, error) {
 	}
 
 	ws.Auth = map[string]turnpike.AuthFunc{
-		"ticket": func(_, _ map[string]interface{}) (string, map[string]interface{}, error) {
-			return bearer, nil, nil
-		},
+		"ticket": turnpike.NewTicketAuthenticator(bearer),
 	}
-	hello, err := ws.JoinRealm("co.fun.chat.ifunny", nil)
+	hello, err := ws.JoinRealm(topic("ifunny"), nil)
 	if err != nil {
 		panic(err)
 	}
