@@ -20,7 +20,7 @@ const (
 
 func MakeClient(bearer, userAgent string) (*Client, error) {
 	client := &Client{bearer, userAgent, http.DefaultClient, nil}
-	self, err := client.User(RouteAccount)
+	self, err := client.User(UserAccount)
 	if err != nil {
 		return nil, err
 	}

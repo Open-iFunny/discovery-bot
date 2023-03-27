@@ -20,12 +20,12 @@ type APIUser struct {
 type rUser string
 
 const (
-	RouteAccount rUser = "/account"
+	UserAccount rUser = "/account"
 )
 
 var (
-	RouteUserID   = func(id string) rUser { return rUser("/users/" + id) }
-	RouteUserNick = func(nick string) rUser { return rUser("/users/by_nick/" + nick) }
+	UserByID   = func(id string) rUser { return rUser("/users/" + id) }
+	UserByNick = func(nick string) rUser { return rUser("/users/by_nick/" + nick) }
 )
 
 func (client *Client) User(path rUser) (APIUser, error) {

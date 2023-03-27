@@ -11,7 +11,7 @@ type APIChannel struct {
 type rChannel string
 
 const (
-	RouteChatsTrending rChannel = "/chats/trending"
+	ChannelsTrending rChannel = "/chats/trending"
 )
 
 func (client *Client) Channels(path rChannel) ([]APIChannel, error) {
