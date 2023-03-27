@@ -1,6 +1,8 @@
 package ifunny
 
 import (
+	"fmt"
+
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -30,15 +32,20 @@ type ChatMessages struct {
 
 type sMessages subscribe
 
-func (client *Client) MessageUnread() sMessages {
+func MessageIn(channel string) sMessages {
 	return sMessages{
-		topic:   uri("user." + client.self.ID + ".chats"),
-		options: map[string]interface{}{},
+		topic:   uri(channel),
+		options: nil,
 	}
+}
+
+func (client *Client) MessageUnread() sMessages {
+	return MessageIn("user." + client.self.ID + ".chats")
 }
 
 func (chat *Chat) IterMessage(desc sMessages) <-chan *ChatMessage {
 	result := make(chan *ChatMessage)
+	fmt.Printf("%+v", desc)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
 			return

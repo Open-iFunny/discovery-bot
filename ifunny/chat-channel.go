@@ -15,10 +15,6 @@ func ChannelName(channel string) cChannel {
 	}
 }
 
-func (client *Client) ChannelDM(them string) cChannel {
-	return ChannelName(them + "_" + client.self.ID)
-}
-
 /*
 Get a ws chat, and whether or not it exists
 */
