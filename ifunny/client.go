@@ -4,15 +4,23 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	apiRoot   = "https://api.ifunny.mobi/v4"
 	projectID = "iFunny"
+
+	logLevel = logrus.InfoLevel
 )
 
 func MakeClient(bearer, userAgent string) (*Client, error) {
-	client := &Client{bearer, userAgent, http.DefaultClient, nil}
+	client := &Client{bearer, userAgent, http.DefaultClient, nil, logrus.New()}
+	client.log.SetFormatter(&logrus.JSONFormatter{})
+	client.log.SetLevel(logLevel)
+
 	self, err := client.User(UserAccount)
 	if err != nil {
 		return nil, err
@@ -26,6 +34,7 @@ type Client struct {
 	bearer, userAgeng string
 	http              *http.Client
 	self              *APIUser
+	log               *logrus.Logger
 }
 
 func request(method, path string, body io.Reader, header http.Header, client *http.Client) (*http.Response, error) {
@@ -46,16 +55,30 @@ func (client *Client) header() http.Header {
 }
 
 func (client *Client) apiRequest(apiBody interface{}, method, path string, body io.Reader) error {
+	traceID := uuid.New().String()
+	client.log.WithFields(logrus.Fields{
+		"trace_id": traceID,
+		"path":     path,
+		"method":   method,
+		"has_body": body != nil},
+	).Trace("make request")
+
 	response, err := request(method, path, body, client.header(), client.http)
 	if err != nil {
+		client.log.WithField("trace_id", traceID).Error(err)
 		return err
 	}
 
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
+		client.log.WithField("trace_id", traceID).Error(err)
 		return err
 	}
 
 	err = json.Unmarshal(bodyBytes, apiBody)
+	if err != nil {
+		client.log.WithField("trace_id", traceID).Error(err)
+	}
+
 	return err
 }

@@ -4,7 +4,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 )
 
 type ChatChannel struct {
@@ -49,8 +51,8 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 
 	return cChannel{
 		procedure: uri("get_or_create_chat"),
-		options:   map[string]interface{}{},
-		args:      []interface{}{},
+		options:   nil,
+		args:      nil,
 		kwargs: map[string]interface{}{
 			"type":  1,
 			"users": them,
@@ -63,12 +65,21 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 Get a ws chat, and whether or not it exists
 */
 func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, bool, error) {
+	traceID := uuid.New().String()
+	chat.client.log.WithFields(logrus.Fields{
+		"trace_id":  traceID,
+		"procedure": desc.procedure,
+		"kwargs":    desc.kwargs,
+	}).Trace("get channel")
+
 	result, err := chat.ws.Call(desc.procedure, desc.options, desc.args, desc.kwargs)
 	if err != nil {
+		chat.client.log.WithField("trace_id", traceID).Error(err)
 		return nil, false, err
 	}
 
 	if result.ArgumentsKw["chat"] == nil {
+		chat.client.log.WithField("trace_id", traceID).Trace("no such channel")
 		return nil, false, nil
 	}
 
@@ -91,19 +102,33 @@ func (client *Client) ChannelsJoined() sChannel {
 }
 
 func (chat *Chat) IterChannel(desc sChannel) <-chan *ChatChannel {
+	traceID := uuid.New().String()
+	chat.client.log.WithFields(logrus.Fields{
+		"trace_id": traceID,
+		"topic":    desc.topic,
+		"options":  desc.options,
+	}).Trace("iter channel")
+
 	result := make(chan *ChatChannel)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
+			chat.client.log.WithField("trace_id", traceID).Trace("recv no channels")
 			return
 		}
 
-		for _, messageRaw := range kwargs["chats"].([]interface{}) {
-			message := new(ChatChannel)
-			if err := mapstructure.Decode(messageRaw, message); err != nil {
-				panic(err)
+		for _, channelRaw := range kwargs["chats"].([]interface{}) {
+			channel := new(ChatChannel)
+			if err := mapstructure.Decode(channelRaw, channel); err != nil {
+				chat.client.log.WithField("trace_id", traceID).Error(err)
+				continue
 			}
 
-			result <- message
+			chat.client.log.WithFields(logrus.Fields{
+				"trace_id":      traceID,
+				"channel_name":  channel.Name,
+				"channel_title": channel.Title,
+			})
+			result <- channel
 		}
 	})
 
