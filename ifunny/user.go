@@ -4,6 +4,11 @@ const (
 	RouteAccount rUser = "/account"
 )
 
+var (
+	RouteUserID   = func(id string) rUser { return rUser("/users/" + id) }
+	RouteUserNick = func(nick string) rUser { return rUser("/users/by_nick/" + nick) }
+)
+
 type rUser string
 
 type APIUser struct {
