@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/gastrodon/popplio/ifunny"
@@ -17,5 +18,14 @@ func main() {
 		panic("IFUNNY_USER_AGENT must be set")
 	}
 
-	ifunny.MakeClient(bearer, userAgent)
+	client, _ := ifunny.MakeClient(bearer, userAgent)
+
+	chat, _ := client.Chat()
+
+	dm, e, err := chat.GetDM("5d19bdf524aac73ffb2b2e81")
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("exists: %t, %+v", e, dm)
 }
