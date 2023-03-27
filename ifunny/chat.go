@@ -46,7 +46,8 @@ func topic(name string) string { return chatNamespace + "." + name }
 
 func (chat *Chat) Chats() <-chan *WSChat {
 	result := make(chan *WSChat)
-	chat.ws.Subscribe(topic("user."+chat.client.self.ID+".chats"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
+	uri := topic("user." + chat.client.self.ID + ".chats")
+	chat.ws.Subscribe(uri, nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
 			return
 		}
@@ -63,7 +64,8 @@ func (chat *Chat) Chats() <-chan *WSChat {
 
 func (chat *Chat) Invites() <-chan *WSInvite {
 	result := make(chan *WSInvite)
-	chat.ws.Subscribe(topic("user."+chat.client.self.ID+".invites"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
+	uri := topic("user." + chat.client.self.ID + ".invites")
+	chat.ws.Subscribe(uri, nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["invites"] == nil {
 			return
 		}
