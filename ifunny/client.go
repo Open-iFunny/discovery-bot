@@ -18,33 +18,46 @@ const (
 )
 
 type Client interface {
-	Request(method, path string, body io.Reader) (*http.Response, error)
-	Connect(bearer string) (Chat, error)
+	request(method, path string, body io.Reader) (*http.Response, error)
+	chat() (Chat, error)
 }
 
-func MakeClient(authorization, userAgent string) Client {
-	return &staticClient{authorization, userAgent, http.DefaultClient}
+func MakeClient(bearer, userAgent string) Client {
+	return &staticClient{bearer, userAgent, http.DefaultClient}
 }
 
 type staticClient struct {
-	authorization, userAgeng string
-	http                     *http.Client
+	bearer, userAgeng string
+	http              *http.Client
 }
 
-func (client *staticClient) Request(method, path string, body io.Reader) (*http.Response, error) {
+func (client *staticClient) request(method, path string, body io.Reader) (*http.Response, error) {
 	request, err := http.NewRequest(method, apiRoot+path, body)
 	if err != nil {
 		return nil, err
 	}
 
-	request.Header.Add("authorization", client.authorization)
+	request.Header.Add("authorization", "bearer "+client.bearer)
 	request.Header.Add("user-agent", client.userAgeng)
 	request.Header.Add("ifunny-project-id", projectID)
 	return client.http.Do(request)
 }
 
-func (client *staticClient) Connect(bearer string) (Chat, error) {
-	return connectChat(bearer)
+func (client *staticClient) chat() (Chat, error) {
+	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	ws.Auth = map[string]turnpike.AuthFunc{
+		"ticket": turnpike.NewTicketAuthenticator(client.bearer),
+	}
+	hello, err := ws.JoinRealm(topic("ifunny"), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	return &chat{ws, client, hello}, nil
 }
 
 type Chat interface {
@@ -54,28 +67,11 @@ type Chat interface {
 
 type chat struct {
 	ws     *turnpike.Client
-	bearer string
+	client Client
 	hello  map[string]interface{}
 }
 
 func topic(name string) string { return chatNamespace + "." + name }
-
-func connectChat(bearer string) (Chat, error) {
-	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	ws.Auth = map[string]turnpike.AuthFunc{
-		"ticket": turnpike.NewTicketAuthenticator(bearer),
-	}
-	hello, err := ws.JoinRealm(topic("ifunny"), nil)
-	if err != nil {
-		panic(err)
-	}
-
-	return &chat{ws, bearer, hello}, nil
-}
 
 func (chat *chat) Chats(userID string) <-chan *WSChat {
 	result := make(chan *WSChat)
