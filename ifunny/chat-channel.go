@@ -79,13 +79,19 @@ func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, bool, error) {
 
 type sChannel subscribe
 
+func ChannelsIn(topic string) sChannel {
+	return sChannel{
+		topic:   uri(topic),
+		options: nil,
+	}
+}
+
 func (client *Client) ChannelsJoined() sChannel {
-	return MessageIn("user." + client.self.ID + ".chats")
+	return ChannelsIn("user." + client.self.ID + ".chats")
 }
 
 func (chat *Chat) IterChannel(desc sChannel) <-chan *ChatChannel {
 	result := make(chan *ChatChannel)
-	fmt.Printf("%+v", desc)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
 			return
