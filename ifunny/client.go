@@ -1,6 +1,7 @@
 package ifunny
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,21 +18,16 @@ const (
 	chatNamespace = "co.fun.chat"
 )
 
-type Client interface {
-	request(method, path string, body io.Reader) (*http.Response, error)
-	chat() (Chat, error)
+func MakeClient(bearer, userAgent string) *Client {
+	return &Client{bearer, userAgent, http.DefaultClient}
 }
 
-func MakeClient(bearer, userAgent string) Client {
-	return &staticClient{bearer, userAgent, http.DefaultClient}
-}
-
-type staticClient struct {
+type Client struct {
 	bearer, userAgeng string
 	http              *http.Client
 }
 
-func (client *staticClient) request(method, path string, body io.Reader) (*http.Response, error) {
+func (client *Client) request(method, path string, body io.Reader) (*http.Response, error) {
 	request, err := http.NewRequest(method, apiRoot+path, body)
 	if err != nil {
 		return nil, err
@@ -43,7 +39,22 @@ func (client *staticClient) request(method, path string, body io.Reader) (*http.
 	return client.http.Do(request)
 }
 
-func (client *staticClient) chat() (Chat, error) {
+func (client *Client) apiRequest(apiBody interface{}, method, path string, body io.Reader) error {
+	response, err := client.request(method, path, body)
+	if err != nil {
+		return err
+	}
+
+	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(bodyBytes, apiBody)
+	return err
+}
+
+func (client *Client) chat() (*Chat, error) {
 	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
 	if err != nil {
 		panic(err)
@@ -57,23 +68,18 @@ func (client *staticClient) chat() (Chat, error) {
 		panic(err)
 	}
 
-	return &chat{ws, client, hello}, nil
+	return &Chat{ws, client, hello}, nil
 }
 
-type Chat interface {
-	Chats(userID string) <-chan *WSChat
-	Invites(userID string) <-chan *WSInvite
-}
-
-type chat struct {
+type Chat struct {
 	ws     *turnpike.Client
-	client Client
+	client *Client
 	hello  map[string]interface{}
 }
 
 func topic(name string) string { return chatNamespace + "." + name }
 
-func (chat *chat) Chats(userID string) <-chan *WSChat {
+func (chat *Chat) Chats(userID string) <-chan *WSChat {
 	result := make(chan *WSChat)
 	chat.ws.Subscribe(topic("user."+userID+".chats"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
@@ -90,7 +96,7 @@ func (chat *chat) Chats(userID string) <-chan *WSChat {
 	return result
 }
 
-func (chat *chat) Invites(userID string) <-chan *WSInvite {
+func (chat *Chat) Invites(userID string) <-chan *WSInvite {
 	result := make(chan *WSInvite)
 	chat.ws.Subscribe(topic("user."+userID+".invites"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["invites"] == nil {
