@@ -1,8 +1,10 @@
 package ifunny
 
 const (
-	USER_SELF = "/account"
+	USER_SELF rUser = "/account"
 )
+
+type rUser string
 
 type APIUser struct {
 	Email            string `json:"email"`
@@ -21,11 +23,11 @@ type APIUser struct {
 	IsVerified         bool `json:"is_verified"`
 }
 
-func (client *Client) User(path string) (APIUser, error) {
+func (client *Client) User(path rUser) (APIUser, error) {
 	response := new(struct {
 		Data APIUser `json:"data"`
 	})
 
-	err := client.apiRequest(response, "GET", path, nil)
+	err := client.apiRequest(response, "GET", string(path), nil)
 	return response.Data, err
 }

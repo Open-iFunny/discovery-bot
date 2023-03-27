@@ -1,8 +1,10 @@
 package ifunny
 
 const (
-	CHATS_TRENDING = "/chats/trending"
+	CHATS_TRENDING rChannel = "/chats/trending"
 )
+
+type rChannel string
 
 type APIChannel struct {
 	Name        string `json:"name"`
@@ -12,13 +14,13 @@ type APIChannel struct {
 	JoinState   int    `json:"join_state"`
 }
 
-func (client *Client) Channels(path string) ([]APIChannel, error) {
+func (client *Client) Channels(path rChannel) ([]APIChannel, error) {
 	response := new(struct {
 		Data struct {
 			Channels []APIChannel `json:"channels"`
 		} `json:"data"`
 	})
 
-	err := client.apiRequest(response, "GET", path, nil)
+	err := client.apiRequest(response, "GET", string(path), nil)
 	return response.Data.Channels, err
 }
