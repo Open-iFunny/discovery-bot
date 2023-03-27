@@ -17,5 +17,5 @@ func main() {
 		panic("IFUNNY_USER_AGENT must be set")
 	}
 
-	_ = ifunny.MakeClient("bearer "+bearer, userAgent)
+	ifunny.MakeClient(bearer, userAgent)
 }
