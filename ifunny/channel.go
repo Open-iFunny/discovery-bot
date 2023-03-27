@@ -1,7 +1,7 @@
 package ifunny
 
 const (
-	CHATS_TRENDING rChannel = "/chats/trending"
+	RouteChatsTrending rChannel = "/chats/trending"
 )
 
 type rChannel string

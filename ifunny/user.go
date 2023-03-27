@@ -1,7 +1,7 @@
 package ifunny
 
 const (
-	USER_SELF rUser = "/account"
+	RouteAccount rUser = "/account"
 )
 
 type rUser string
