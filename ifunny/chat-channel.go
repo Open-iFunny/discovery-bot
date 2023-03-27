@@ -1,7 +1,7 @@
 package ifunny
 
 import (
-	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -39,6 +39,14 @@ func ChannelName(channel string) cChannel {
 }
 
 func (client *Client) ChannelDM(them ...string) cChannel {
+	us := append(them, client.self.ID)
+	sort.Strings(us)
+	size := len(us)
+	backwards := make([]string, size)
+	for index, each := range us {
+		backwards[size-1-index] = each
+	}
+
 	return cChannel{
 		procedure: uri("get_or_create_chat"),
 		options:   map[string]interface{}{},
@@ -46,7 +54,7 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 		kwargs: map[string]interface{}{
 			"type":  1,
 			"users": them,
-			"name":  strings.Join(append(them, client.self.ID), "_"),
+			"name":  strings.Join(backwards, "_"),
 		},
 	}
 }
