@@ -1,9 +1,11 @@
 package ifunny
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"github.com/mitchellh/mapstructure"
+)
 
 type WSChat struct {
-	Name          string `mapstructure:"name"`
+	Name          string `mapstructure:"name"` // I think this is the unique id
 	Title         string `mapstructure:"title"`
 	MembersOnline int    `mapstructure:"members_online"`
 	MembersTotal  int    `mapstructure:"members_total"`
@@ -44,12 +46,26 @@ func (chat *Chat) Chats() <-chan *WSChat {
 	return result
 }
 
+type cChannel call
+
+func ChannelName(channel string) cChannel {
+	return cChannel{
+		procedure: topic("get_chat"),
+		options:   map[string]interface{}{},
+		args:      []interface{}{},
+		kwargs:    map[string]interface{}{"chat_name": channel},
+	}
+}
+
+func (client *Client) ChannelDM(them string) cChannel {
+	return ChannelName(them + "_" + client.self.ID)
+}
+
 /*
 Get a ws chat, and whether or not it exists
 */
-func (chat *Chat) GetDM(id string) (*WSChat, bool, error) {
-	kwargs := map[string]interface{}{"chat_name": id + "_" + chat.client.self.ID}
-	result, err := chat.ws.Call(topic("get_chat"), nil, nil, kwargs)
+func (chat *Chat) Channel(desc cChannel) (*WSChat, bool, error) {
+	result, err := chat.ws.Call(desc.procedure, desc.options, desc.args, desc.kwargs)
 	if err != nil {
 		return nil, false, err
 	}

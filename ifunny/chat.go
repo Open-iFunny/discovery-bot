@@ -4,6 +4,13 @@ import (
 	"github.com/jcelliott/turnpike"
 )
 
+type call struct {
+	procedure string
+	options   map[string]interface{}
+	args      []interface{}
+	kwargs    map[string]interface{}
+}
+
 func topic(name string) string { return chatNamespace + "." + name }
 
 func (client *Client) Chat() (*Chat, error) {
