@@ -11,7 +11,7 @@ type WSInvite struct {
 
 func (chat *Chat) Invites() <-chan *WSInvite {
 	result := make(chan *WSInvite)
-	uri := topic("user." + chat.client.self.ID + ".invites")
+	uri := uri("user." + chat.client.self.ID + ".invites")
 	chat.ws.Subscribe(uri, nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["invites"] == nil {
 			return

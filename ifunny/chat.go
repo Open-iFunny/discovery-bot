@@ -11,7 +11,12 @@ type call struct {
 	kwargs    map[string]interface{}
 }
 
-func topic(name string) string { return chatNamespace + "." + name }
+type subscribe struct {
+	topic   string
+	options map[string]interface{}
+}
+
+func uri(name string) string { return chatNamespace + "." + name }
 
 func (client *Client) Chat() (*Chat, error) {
 	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
@@ -19,10 +24,8 @@ func (client *Client) Chat() (*Chat, error) {
 		panic(err)
 	}
 
-	ws.Auth = map[string]turnpike.AuthFunc{
-		"ticket": turnpike.NewTicketAuthenticator(client.bearer),
-	}
-	hello, err := ws.JoinRealm(topic("ifunny"), nil)
+	ws.Auth = map[string]turnpike.AuthFunc{"ticket": turnpike.NewTicketAuthenticator(client.bearer)}
+	hello, err := ws.JoinRealm(uri("ifunny"), nil)
 	if err != nil {
 		panic(err)
 	}
