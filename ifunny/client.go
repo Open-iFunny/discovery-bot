@@ -18,29 +18,42 @@ const (
 	chatNamespace = "co.fun.chat"
 )
 
-func MakeClient(bearer, userAgent string) *Client {
-	return &Client{bearer, userAgent, http.DefaultClient}
+func MakeClient(bearer, userAgent string) (*Client, error) {
+	client := &Client{bearer, userAgent, http.DefaultClient, nil}
+	self, err := client.User(RouteAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	client.self = &self
+	return client, nil
 }
 
 type Client struct {
 	bearer, userAgeng string
 	http              *http.Client
+	self              *APIUser
 }
 
-func (client *Client) request(method, path string, body io.Reader) (*http.Response, error) {
+func request(method, path string, body io.Reader, header http.Header, client *http.Client) (*http.Response, error) {
 	request, err := http.NewRequest(method, apiRoot+path, body)
 	if err != nil {
 		return nil, err
 	}
+	request.Header = header
+	return client.Do(request)
+}
 
-	request.Header.Add("authorization", "bearer "+client.bearer)
-	request.Header.Add("user-agent", client.userAgeng)
-	request.Header.Add("ifunny-project-id", projectID)
-	return client.http.Do(request)
+func (client *Client) header() http.Header {
+	return http.Header{
+		"authorization":     []string{"bearer " + client.bearer},
+		"user-agent":        []string{client.userAgeng},
+		"ifunny-project-id": []string{projectID},
+	}
 }
 
 func (client *Client) apiRequest(apiBody interface{}, method, path string, body io.Reader) error {
-	response, err := client.request(method, path, body)
+	response, err := request(method, path, body, client.header(), client.http)
 	if err != nil {
 		return err
 	}
