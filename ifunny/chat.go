@@ -44,9 +44,9 @@ type Chat struct {
 
 func topic(name string) string { return chatNamespace + "." + name }
 
-func (chat *Chat) Chats(userID string) <-chan *WSChat {
+func (chat *Chat) Chats() <-chan *WSChat {
 	result := make(chan *WSChat)
-	chat.ws.Subscribe(topic("user."+userID+".chats"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
+	chat.ws.Subscribe(topic("user."+chat.client.self.ID+".chats"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
 			return
 		}
@@ -61,9 +61,9 @@ func (chat *Chat) Chats(userID string) <-chan *WSChat {
 	return result
 }
 
-func (chat *Chat) Invites(userID string) <-chan *WSInvite {
+func (chat *Chat) Invites() <-chan *WSInvite {
 	result := make(chan *WSInvite)
-	chat.ws.Subscribe(topic("user."+userID+".invites"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
+	chat.ws.Subscribe(topic("user."+chat.client.self.ID+".invites"), nil, func(_ []interface{}, kwargs map[string]interface{}) {
 		if kwargs["invites"] == nil {
 			return
 		}
