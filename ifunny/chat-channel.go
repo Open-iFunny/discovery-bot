@@ -69,11 +69,13 @@ func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, bool, error) {
 	return wsChat, true, err
 }
 
-func (client *Client) ChannelsJoined() sMessages {
+type sChannel subscribe
+
+func (client *Client) ChannelsJoined() sChannel {
 	return MessageIn("user." + client.self.ID + ".chats")
 }
 
-func (chat *Chat) IterChannel(desc sMessages) <-chan *ChatChannel {
+func (chat *Chat) IterChannel(desc sChannel) <-chan *ChatChannel {
 	result := make(chan *ChatChannel)
 	fmt.Printf("%+v", desc)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
