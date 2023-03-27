@@ -37,7 +37,7 @@ func (client *Client) MessageUnread() sMessages {
 	}
 }
 
-func (chat *Chat) MessageStream(desc sMessages) <-chan *ChatMessage {
+func (chat *Chat) IterMessage(desc sMessages) <-chan *ChatMessage {
 	result := make(chan *ChatMessage)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
