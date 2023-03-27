@@ -1,11 +1,5 @@
 package ifunny
 
-const (
-	RouteChatsTrending rChannel = "/chats/trending"
-)
-
-type rChannel string
-
 type APIChannel struct {
 	Name        string `json:"name"`
 	Title       string `json:"title"`
@@ -13,6 +7,12 @@ type APIChannel struct {
 	Description string `json:"description"`
 	JoinState   int    `json:"join_state"`
 }
+
+type rChannel string
+
+const (
+	RouteChatsTrending rChannel = "/chats/trending"
+)
 
 func (client *Client) Channels(path rChannel) ([]APIChannel, error) {
 	response := new(struct {

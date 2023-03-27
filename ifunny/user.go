@@ -1,16 +1,5 @@
 package ifunny
 
-const (
-	RouteAccount rUser = "/account"
-)
-
-var (
-	RouteUserID   = func(id string) rUser { return rUser("/users/" + id) }
-	RouteUserNick = func(nick string) rUser { return rUser("/users/by_nick/" + nick) }
-)
-
-type rUser string
-
 type APIUser struct {
 	Email            string `json:"email"`
 	SafeMode         bool   `json:"safe_mode"`
@@ -27,6 +16,17 @@ type APIUser struct {
 	IsModerator        bool `json:"is_moderator"`
 	IsVerified         bool `json:"is_verified"`
 }
+
+type rUser string
+
+const (
+	RouteAccount rUser = "/account"
+)
+
+var (
+	RouteUserID   = func(id string) rUser { return rUser("/users/" + id) }
+	RouteUserNick = func(nick string) rUser { return rUser("/users/by_nick/" + nick) }
+)
 
 func (client *Client) User(path rUser) (APIUser, error) {
 	response := new(struct {
