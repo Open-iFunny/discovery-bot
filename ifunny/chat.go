@@ -16,6 +16,11 @@ type subscribe struct {
 	options map[string]interface{}
 }
 
+const (
+	chatRoot      = "wss://chat.ifunny.co/chat"
+	chatNamespace = "co.fun.chat"
+)
+
 func uri(name string) string { return chatNamespace + "." + name }
 
 func (client *Client) Chat() (*Chat, error) {
