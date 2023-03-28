@@ -31,15 +31,14 @@ func MessageIn(channel string) sMessage {
 	}
 }
 
-func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
+func (chat *Chat) SubscribeMessage(desc sMessage, handle func(*ChatMessage) error) func() {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
 		"topic":    desc.topic,
 		"options":  desc.options,
-	}).Trace("iter message")
+	}).Trace("begin subscribe")
 
-	result := make(chan *ChatMessage)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["message"] == nil {
 			mType := 0
@@ -67,10 +66,28 @@ func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
 			"message_from": message.User.Nick,
 			"message_text": message.Text,
 		})
-		result <- message
+
+		if err := handle(message); err != nil {
+			chat.client.log.WithField("trace_id", traceID).Error("subscribe message handler: " + err.Error())
+		}
 	})
 
-	return result, func() { chat.ws.Unsubscribe(desc.topic) }
+	return func() { chat.ws.Unsubscribe(desc.topic) }
+}
+
+func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
+	traceID := uuid.New().String()
+	chat.client.log.WithFields(logrus.Fields{
+		"trace_id": traceID,
+		"topic":    desc.topic,
+		"options":  desc.options,
+	}).Trace("iter message")
+
+	result := make(chan *ChatMessage)
+	return result, chat.SubscribeMessage(desc, func(chat *ChatMessage) error {
+		result <- chat
+		return nil
+	})
 }
 
 type pMessage publish

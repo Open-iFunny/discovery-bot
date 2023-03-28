@@ -105,16 +105,15 @@ func (client *Client) ChannelsJoined() sChannel {
 	return ChannelsIn("user." + client.self.ID + ".chats")
 }
 
-func (chat *Chat) IterChannel(desc sChannel) (<-chan *ChatChannel, func()) {
+func (chat *Chat) SubscribeChannel(desc sChannel, handle func(*ChatChannel) error) func() {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
 		"topic":    desc.topic,
 		"options":  desc.options,
-	}).Trace("iter channel")
+	}).Trace("begin subscribe channel")
 
-	result := make(chan *ChatChannel)
-	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
+	chat.ws.Subscribe(desc.topic, desc.options, func(args []interface{}, kwargs map[string]interface{}) {
 		if kwargs["chats"] == nil {
 			chat.client.log.WithField("trace_id", traceID).Trace("recv no channels")
 			return
@@ -132,8 +131,28 @@ func (chat *Chat) IterChannel(desc sChannel) (<-chan *ChatChannel, func()) {
 				"channel_name":  channel.Name,
 				"channel_title": channel.Title,
 			})
-			result <- channel
+
+			if err := handle(channel); err != nil {
+				chat.client.log.WithField("trace_id", traceID).Error("subscribe channel handle: " + err.Error())
+			}
 		}
+	})
+
+	return func() { chat.ws.Unsubscribe(desc.topic) }
+}
+
+func (chat *Chat) IterChannel(desc sChannel) (<-chan *ChatChannel, func()) {
+	traceID := uuid.New().String()
+	chat.client.log.WithFields(logrus.Fields{
+		"trace_id": traceID,
+		"topic":    desc.topic,
+		"options":  desc.options,
+	}).Trace("begin iter channel")
+
+	result := make(chan *ChatChannel)
+	chat.SubscribeChannel(desc, func(channel *ChatChannel) error {
+		result <- channel
+		return nil
 	})
 
 	return result, func() { chat.ws.Unsubscribe(desc.topic) }
