@@ -105,7 +105,7 @@ func (client *Client) ChannelsJoined() sChannel {
 	return ChannelsIn("user." + client.self.ID + ".chats")
 }
 
-func (chat *Chat) IterChannel(desc sChannel) <-chan *ChatChannel {
+func (chat *Chat) IterChannel(desc sChannel) (<-chan *ChatChannel, func()) {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -136,5 +136,5 @@ func (chat *Chat) IterChannel(desc sChannel) <-chan *ChatChannel {
 		}
 	})
 
-	return result
+	return result, func() { chat.ws.Unsubscribe(desc.topic) }
 }

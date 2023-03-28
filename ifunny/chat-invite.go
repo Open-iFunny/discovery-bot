@@ -9,7 +9,7 @@ import (
 type WSInvite struct {
 }
 
-func (chat *Chat) Invites() <-chan *WSInvite {
+func (chat *Chat) Invites() (<-chan *WSInvite, func()) {
 	result := make(chan *WSInvite)
 	uri := uri("user." + chat.client.self.ID + ".invites")
 	chat.ws.Subscribe(uri, nil, func(_ []interface{}, kwargs map[string]interface{}) {
@@ -26,5 +26,5 @@ func (chat *Chat) Invites() <-chan *WSInvite {
 		}
 	})
 
-	return result
+	return result, func() { chat.ws.Unsubscribe(uri) }
 }

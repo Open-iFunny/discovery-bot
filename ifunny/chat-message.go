@@ -31,7 +31,7 @@ func MessageIn(channel string) sMessage {
 	}
 }
 
-func (chat *Chat) IterMessage(desc sMessage) <-chan *ChatMessage {
+func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -70,7 +70,7 @@ func (chat *Chat) IterMessage(desc sMessage) <-chan *ChatMessage {
 		result <- message
 	})
 
-	return result
+	return result, func() { chat.ws.Unsubscribe(desc.topic) }
 }
 
 type pMessage publish
