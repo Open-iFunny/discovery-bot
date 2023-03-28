@@ -31,6 +31,33 @@ type ChatChannel struct {
 
 type cChannel call
 
+const (
+	ChannelDM      channelType = 1
+	ChannelPrivate channelType = 2
+	ChannelPublic  channelType = 3
+)
+
+type channelType int
+
+func ChannelNew(title, name, description string, invite []string, channelType channelType) cChannel {
+	if description != "" && channelType == ChannelPrivate {
+		panic("cannot add a description to a private channel")
+	}
+
+	return cChannel{
+		procedure: uri("new_chat"),
+		options:   map[string]interface{}{},
+		args:      []interface{}{},
+		kwargs: map[string]interface{}{
+			"users":       invite,
+			"title":       title,
+			"name":        name,
+			"description": description,
+			"type":        channelType,
+		},
+	}
+}
+
 func ChannelName(channel string) cChannel {
 	return cChannel{
 		procedure: uri("get_chat"),
@@ -58,7 +85,7 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 		options:   nil,
 		args:      nil,
 		kwargs: map[string]interface{}{
-			"type":  1,
+			"type":  ChannelDM,
 			"users": them,
 			"name":  DMChannelName(client.Self.ID, them),
 		},
