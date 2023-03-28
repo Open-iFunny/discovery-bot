@@ -1,8 +1,6 @@
 package ifunny
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -44,7 +42,6 @@ func (chat *Chat) IterMessage(desc sMessage) <-chan *ChatMessage {
 	result := make(chan *ChatMessage)
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["message"] == nil {
-			fmt.Printf("got non-message data %+v\n", kwargs)
 			mType := 0
 			if err := mapstructure.Decode(kwargs["type"], &mType); err != nil {
 				chat.client.log.WithField("trace_id", traceID).Error(err)
