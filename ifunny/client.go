@@ -13,13 +13,13 @@ const (
 	apiRoot   = "https://api.ifunny.mobi/v4"
 	projectID = "iFunny"
 
-	logLevel = logrus.InfoLevel
+	LogLevel = logrus.InfoLevel
 )
 
 func MakeClient(bearer, userAgent string) (*Client, error) {
 	client := &Client{bearer, userAgent, http.DefaultClient, nil, logrus.New()}
 	client.log.SetFormatter(&logrus.JSONFormatter{})
-	client.log.SetLevel(logLevel)
+	client.log.SetLevel(LogLevel)
 
 	self, err := client.User(UserAccount)
 	if err != nil {
@@ -27,6 +27,16 @@ func MakeClient(bearer, userAgent string) (*Client, error) {
 	}
 
 	client.self = &self
+	return client, nil
+}
+
+func MakeClientLog(bearer, userAgent string, log *logrus.Logger) (*Client, error) {
+	client, err := MakeClient(bearer, userAgent)
+	if err != nil {
+		return nil, err
+	}
+
+	client.log = log
 	return client, nil
 }
 
