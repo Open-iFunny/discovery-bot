@@ -40,7 +40,7 @@ func ChannelName(channel string) cChannel {
 	}
 }
 
-func dmChannelName(self string, them []string) string {
+func DMChannelName(self string, them []string) string {
 	us := append(them, self)
 	sort.Strings(us)
 	size := len(us)
@@ -60,7 +60,7 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 		kwargs: map[string]interface{}{
 			"type":  1,
 			"users": them,
-			"name":  dmChannelName(client.self.ID, them),
+			"name":  DMChannelName(client.Self.ID, them),
 		},
 	}
 }
@@ -102,7 +102,7 @@ func ChannelsIn(topic string) sChannel {
 }
 
 func (client *Client) ChannelsJoined() sChannel {
-	return ChannelsIn("user." + client.self.ID + ".chats")
+	return ChannelsIn("user." + client.Self.ID + ".chats")
 }
 
 func (chat *Chat) SubscribeChannel(desc sChannel, handle func(*ChatChannel) error) func() {

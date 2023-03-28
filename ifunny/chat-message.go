@@ -6,13 +6,23 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	UNK_0 messageType = iota
+	MESSAGE
+	UNK_2
+	JOIN_CHANNEL
+	EXIT_CHANNEL
+)
+
+type messageType int
+
 type ChatMessage struct {
 	ID   string `mapstructure:"id"`
 	Text string `mapstructure:"text"`
 
-	Type   int     `mapstructure:"type"` // 1 = message, ???
-	Status int     `mapstructure:"status"`
-	PubAt  float64 `mapstructure:"pub_at"`
+	Type   messageType `mapstructure:"type"` // 1 = message, ???
+	Status int         `mapstructure:"status"`
+	PubAt  float64     `mapstructure:"pub_at"`
 
 	User struct {
 		ID         string `mapstructure:"user"`
@@ -22,16 +32,16 @@ type ChatMessage struct {
 	} `mapstructure:"user"`
 }
 
-type sMessage subscribe
+type sEvent subscribe
 
-func MessageIn(channel string) sMessage {
-	return sMessage{
+func MessageIn(channel string) sEvent {
+	return sEvent{
 		topic:   uri("chat." + channel),
 		options: nil,
 	}
 }
 
-func (chat *Chat) SubscribeMessage(desc sMessage, handle func(*ChatMessage) error) func() {
+func (chat *Chat) SubscribeEvent(desc sEvent, handle func(Event) error) func() {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -40,34 +50,18 @@ func (chat *Chat) SubscribeMessage(desc sMessage, handle func(*ChatMessage) erro
 	}).Trace("begin subscribe message")
 
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
-		if kwargs["message"] == nil {
-			mType := 0
-			if err := mapstructure.Decode(kwargs["type"], &mType); err != nil {
-				chat.client.log.WithField("trace_id", traceID).Error(err)
-				return
-			}
-
-			chat.client.log.WithFields(logrus.Fields{
-				"trace_id": traceID,
-				"type":     mType,
-			}).Warn("unknown message payload ", kwargs)
-			return
-		}
-
-		message := new(ChatMessage)
-		if err := mapstructure.Decode(kwargs["message"], message); err != nil {
+		eType := 0
+		if err := mapstructure.Decode(kwargs["type"], &eType); err != nil {
 			chat.client.log.WithField("trace_id", traceID).Error(err)
-			return
 		}
 
 		chat.client.log.WithFields(logrus.Fields{
-			"trace_id":     traceID,
-			"message_id":   message.ID,
-			"message_from": message.User.Nick,
-			"message_text": message.Text,
-		})
+			"trace_id":   traceID,
+			"event_type": eType,
+			"event_data": kwargs,
+		}).Trace("handle event")
 
-		if err := handle(message); err != nil {
+		if err := handle(makeEvent(eType, kwargs)); err != nil {
 			chat.client.log.WithField("trace_id", traceID).Error("subscribe message handler: " + err.Error())
 		}
 	})
@@ -75,7 +69,7 @@ func (chat *Chat) SubscribeMessage(desc sMessage, handle func(*ChatMessage) erro
 	return func() { chat.ws.Unsubscribe(desc.topic) }
 }
 
-func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
+func (chat *Chat) IterEvent(desc sEvent) (<-chan Event, func()) {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -83,8 +77,8 @@ func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
 		"options":  desc.options,
 	}).Trace("begin iter message")
 
-	result := make(chan *ChatMessage)
-	return result, chat.SubscribeMessage(desc, func(chat *ChatMessage) error {
+	result := make(chan Event)
+	return result, chat.SubscribeEvent(desc, func(chat Event) error {
 		result <- chat
 		return nil
 	})

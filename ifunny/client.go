@@ -17,7 +17,7 @@ const (
 )
 
 func MakeClient(bearer, userAgent string) (*Client, error) {
-	client := &Client{bearer, userAgent, http.DefaultClient, nil, logrus.New()}
+	client := &Client{bearer, userAgent, http.DefaultClient, logrus.New(), nil}
 	client.log.SetFormatter(&logrus.JSONFormatter{})
 	client.log.SetLevel(LogLevel)
 
@@ -26,7 +26,7 @@ func MakeClient(bearer, userAgent string) (*Client, error) {
 		return nil, err
 	}
 
-	client.self = &self
+	client.Self = &self
 	return client, nil
 }
 
@@ -43,8 +43,9 @@ func MakeClientLog(bearer, userAgent string, log *logrus.Logger) (*Client, error
 type Client struct {
 	bearer, userAgeng string
 	http              *http.Client
-	self              *APIUser
 	log               *logrus.Logger
+
+	Self *APIUser
 }
 
 func request(method, path string, body io.Reader, header http.Header, client *http.Client) (*http.Response, error) {
