@@ -37,7 +37,7 @@ func (chat *Chat) SubscribeMessage(desc sMessage, handle func(*ChatMessage) erro
 		"trace_id": traceID,
 		"topic":    desc.topic,
 		"options":  desc.options,
-	}).Trace("begin subscribe")
+	}).Trace("begin subscribe message")
 
 	chat.ws.Subscribe(desc.topic, desc.options, func(opts []interface{}, kwargs map[string]interface{}) {
 		if kwargs["message"] == nil {
@@ -81,7 +81,7 @@ func (chat *Chat) IterMessage(desc sMessage) (<-chan *ChatMessage, func()) {
 		"trace_id": traceID,
 		"topic":    desc.topic,
 		"options":  desc.options,
-	}).Trace("iter message")
+	}).Trace("begin iter message")
 
 	result := make(chan *ChatMessage)
 	return result, chat.SubscribeMessage(desc, func(chat *ChatMessage) error {
