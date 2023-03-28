@@ -17,6 +17,13 @@ type subscribe struct {
 	options map[string]interface{}
 }
 
+type publish struct {
+	topic   string
+	options map[string]interface{}
+	args    []interface{}
+	kwargs  map[string]interface{}
+}
+
 const (
 	chatRoot      = "wss://chat.ifunny.co/chat"
 	chatNamespace = "co.fun.chat"

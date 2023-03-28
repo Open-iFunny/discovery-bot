@@ -72,3 +72,22 @@ func (chat *Chat) IterMessage(desc sMessage) <-chan *ChatMessage {
 
 	return result
 }
+
+type pMessage publish
+
+func MessageTo(channel, text string) pMessage {
+	return pMessage{
+		topic:   uri("chat." + channel),
+		options: map[string]interface{}{"acknowledge": 1, "exclude_me": 1},
+		args:    nil,
+		kwargs: map[string]interface{}{
+			"message_type": 1,
+			"type":         200,
+			"text":         text,
+		},
+	}
+}
+
+func (chat *Chat) SendMessage(desc pMessage) error {
+	return chat.ws.Publish(desc.topic, desc.options, desc.args, desc.kwargs)
+}
