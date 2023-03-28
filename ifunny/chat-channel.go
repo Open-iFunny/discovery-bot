@@ -95,28 +95,13 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 /*
 Get a ws chat, and whether or not it exists
 */
-func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, bool, error) {
-	traceID := uuid.New().String()
-	chat.client.log.WithFields(logrus.Fields{
-		"trace_id":  traceID,
-		"procedure": desc.procedure,
-		"kwargs":    desc.kwargs,
-	}).Trace("begin get channel")
+func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, error) {
+	channel := new(struct {
+		Chat *ChatChannel `mapstructure:"chat"`
+	})
 
-	result, err := chat.ws.Call(desc.procedure, desc.options, desc.args, desc.kwargs)
-	if err != nil {
-		chat.client.log.WithField("trace_id", traceID).Error(err)
-		return nil, false, err
-	}
-
-	if result.ArgumentsKw["chat"] == nil {
-		chat.client.log.WithField("trace_id", traceID).Trace("no such channel")
-		return nil, false, nil
-	}
-
-	wsChat := new(ChatChannel)
-	err = mapstructure.Decode(result.ArgumentsKw["chat"], wsChat)
-	return wsChat, true, err
+	err := chat.call(call(desc), channel)
+	return channel.Chat, err
 }
 
 func (chat *Chat) HideChannel(channel string) error {

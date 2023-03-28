@@ -27,6 +27,15 @@ func Contacts(limit int) cUser {
 }
 
 func (chat *Chat) GetUsers(desc cUser) ([]*ChatUser, error) {
+	chats := new(struct {
+		Users []*ChatUser `mapstructure:"users"`
+	})
+
+	err := chat.call(call(desc), &chats)
+	return chats.Users, err
+}
+
+func (chat *Chat) _GetUsers(desc cUser) ([]*ChatUser, error) {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id":  traceID,
