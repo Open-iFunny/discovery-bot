@@ -40,8 +40,8 @@ func ChannelName(channel string) cChannel {
 	}
 }
 
-func (client *Client) ChannelDM(them ...string) cChannel {
-	us := append(them, client.self.ID)
+func dmChannelName(self string, them []string) string {
+	us := append(them, self)
 	sort.Strings(us)
 	size := len(us)
 	backwards := make([]string, size)
@@ -49,6 +49,10 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 		backwards[size-1-index] = each
 	}
 
+	return strings.Join(backwards, "_")
+}
+
+func (client *Client) ChannelDM(them ...string) cChannel {
 	return cChannel{
 		procedure: uri("get_or_create_chat"),
 		options:   nil,
@@ -56,7 +60,7 @@ func (client *Client) ChannelDM(them ...string) cChannel {
 		kwargs: map[string]interface{}{
 			"type":  1,
 			"users": them,
-			"name":  strings.Join(backwards, "_"),
+			"name":  dmChannelName(client.self.ID, them),
 		},
 	}
 }
