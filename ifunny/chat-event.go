@@ -7,32 +7,32 @@ import (
 )
 
 const (
-	CHANNEL_MESSAGE eventType = 200
+	CHANNEL_MESSAGE resourceType = 200
 )
 
-type eventType int
+type resourceType int
 
-type Event interface {
-	Type() eventType
+type WSResource interface {
+	Type() resourceType
 	Decode(target interface{}) error
 }
 
-func makeEvent(eType int, data map[string]interface{}) Event {
-	switch eventType(eType) {
+func makeEvent(eType int, data map[string]interface{}) WSResource {
+	switch resourceType(eType) {
 	case CHANNEL_MESSAGE:
 		return keySerialize{CHANNEL_MESSAGE, data, "message"}
 	default:
-		return noSerialize{eventType(eType), data}
+		return noSerialize{resourceType(eType), data}
 	}
 }
 
 type keySerialize struct {
-	eType eventType
+	eType resourceType
 	data  map[string]interface{}
 	key   string
 }
 
-func (key keySerialize) Type() eventType {
+func (key keySerialize) Type() resourceType {
 	return key.eType
 }
 
@@ -45,11 +45,11 @@ func (key keySerialize) Decode(target interface{}) error {
 }
 
 type noSerialize struct {
-	eType eventType
+	eType resourceType
 	data  map[string]interface{}
 }
 
-func (no noSerialize) Type() eventType {
+func (no noSerialize) Type() resourceType {
 	return no.eType
 }
 

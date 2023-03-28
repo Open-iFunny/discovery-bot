@@ -39,8 +39,8 @@ func main() {
 	}
 
 	bot.On(
-		func(event ifunny.Event) bool { return event.Type() == 200 },
-		func(event ifunny.Event) error {
+		func(event ifunny.WSResource) bool { return event.Type() == 200 },
+		func(event ifunny.WSResource) error {
 			message := new(ifunny.ChatMessage)
 			if err := event.Decode(message); err != nil {
 				return nil
@@ -51,8 +51,8 @@ func main() {
 		})
 
 	bot.On(
-		func(event ifunny.Event) bool { return event.Type() != 200 },
-		func(event ifunny.Event) error {
+		func(event ifunny.WSResource) bool { return event.Type() != 200 },
+		func(event ifunny.WSResource) error {
 			fmt.Printf("unknown event %d: %+v\n", event.Type(), event)
 			return nil
 		})

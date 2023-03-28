@@ -41,7 +41,7 @@ func MessageIn(channel string) sEvent {
 	}
 }
 
-func (chat *Chat) SubscribeEvent(desc sEvent, handle func(Event) error) func() {
+func (chat *Chat) SubscribeEvent(desc sEvent, handle func(WSResource) error) func() {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -69,7 +69,7 @@ func (chat *Chat) SubscribeEvent(desc sEvent, handle func(Event) error) func() {
 	return func() { chat.ws.Unsubscribe(desc.topic) }
 }
 
-func (chat *Chat) IterEvent(desc sEvent) (<-chan Event, func()) {
+func (chat *Chat) IterEvent(desc sEvent) (<-chan WSResource, func()) {
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -77,8 +77,8 @@ func (chat *Chat) IterEvent(desc sEvent) (<-chan Event, func()) {
 		"options":  desc.options,
 	}).Trace("begin iter message")
 
-	result := make(chan Event)
-	return result, chat.SubscribeEvent(desc, func(chat Event) error {
+	result := make(chan WSResource)
+	return result, chat.SubscribeEvent(desc, func(chat WSResource) error {
 		result <- chat
 		return nil
 	})

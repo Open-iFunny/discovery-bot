@@ -6,8 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type filter func(event ifunny.Event) bool
-type handler func(event ifunny.Event) error
+type filter func(event ifunny.WSResource) bool
+type handler func(event ifunny.WSResource) error
 
 func (bot *Bot) On(filter filter, handle handler) func() {
 	eventID := uuid.New().String()
@@ -18,7 +18,7 @@ func (bot *Bot) On(filter filter, handle handler) func() {
 
 func (bot *Bot) Listen() {
 	for event := range bot.recvEvents {
-		go func(handlers map[string]filtHandler, event ifunny.Event) {
+		go func(handlers map[string]filtHandler, event ifunny.WSResource) {
 			log := bot.log.WithFields(logrus.Fields{
 				"event_type": event.Type(),
 			})
