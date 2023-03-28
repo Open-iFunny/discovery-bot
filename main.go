@@ -3,52 +3,63 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
+	"github.com/gastrodon/popplio/bot"
 	"github.com/gastrodon/popplio/ifunny"
 )
 
-func main() {
-	bearer := os.Getenv("IFUNNY_BEARER")
+var bearer = ""
+var userAgent = ""
+
+func init() {
+	bearer = os.Getenv("IFUNNY_BEARER")
 	if bearer == "" {
 		panic("IFUNNY_BEARER must be set")
 	}
 
-	userAgent := os.Getenv("IFUNNY_USER_AGENT")
+	userAgent = os.Getenv("IFUNNY_USER_AGENT")
 	if userAgent == "" {
 		panic("IFUNNY_USER_AGENT must be set")
 	}
+}
 
-	client, _ := ifunny.MakeClient(bearer, userAgent)
-	client.User(ifunny.UserAccount)
+func main() {
+	bot, err := bot.MakeBot(bearer, userAgent)
+	if err != nil {
+		panic(err)
+	}
 
-	<-time.After(5 * time.Second)
+	contacts, err := bot.Chat.GetUsers(ifunny.Contacts(10_000))
+	if err != nil {
+		panic(err)
+	}
 
-	chat, _ := client.Chat()
+	for _, contact := range contacts {
+		bot.Subscribe(ifunny.DMChannelName(bot.Client.Self.ID, []string{contact.ID}))
+	}
 
-	go func() {
-		channel, _, _ := chat.GetChannel(client.ChannelDM("5396c1348ea6b8dc5a8b456c"))
+	bot.On(
+		func(event ifunny.Event) bool { return event.Type() == 200 },
+		func(event ifunny.Event) error {
+			message := new(ifunny.ChatMessage)
+			if err := event.Decode(message); err != nil {
+				return nil
+			}
 
-		iterMessage, _ := chat.IterMessage(ifunny.MessageIn(channel.Name))
-		for message := range iterMessage {
-			fmt.Printf("recv: %+v\n", message)
-		}
-	}()
+			fmt.Printf("[%s %d] %s\n", message.User.Nick, message.Type, message.Text)
+			return nil
+		})
 
-	go func() {
-		channel, _, _ := chat.GetChannel(ifunny.ChannelName("yoloswaggin"))
+	bot.On(
+		func(event ifunny.Event) bool { return event.Type() != 200 },
+		func(event ifunny.Event) error {
+			fmt.Printf("unknown event %d: %+v\n", event.Type(), event)
+			return nil
+		})
 
-		iterMessage, ubsubscribe := chat.IterMessage(ifunny.MessageIn(channel.Name))
-		go func() {
-			<-time.After(5 * time.Second)
-			fmt.Println("unsubscribing yoloswaggin")
-			ubsubscribe()
-		}()
+	for i := 0; i < 100; i++ {
+		bot.Chat.HideChannel(fmt.Sprintf("foobar%d", i))
+	}
 
-		for message := range iterMessage {
-			fmt.Printf("recv: %+v\n", message)
-		}
-	}()
-
-	<-time.After(40 * time.Second)
+	bot.Listen()
 }

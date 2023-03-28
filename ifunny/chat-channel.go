@@ -119,6 +119,11 @@ func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, bool, error) {
 	return wsChat, true, err
 }
 
+func (chat *Chat) HideChannel(channel string) error {
+	_, err := chat.ws.Call(uri("hide_chat"), nil, nil, map[string]interface{}{"chat_name": channel})
+	return err
+}
+
 type sChannel subscribe
 
 func ChannelsIn(topic string) sChannel {
