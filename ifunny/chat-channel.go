@@ -74,7 +74,7 @@ func (chat *Chat) GetChannel(desc cChannel) (*ChatChannel, bool, error) {
 		"trace_id":  traceID,
 		"procedure": desc.procedure,
 		"kwargs":    desc.kwargs,
-	}).Trace("get channel")
+	}).Trace("begin get channel")
 
 	result, err := chat.ws.Call(desc.procedure, desc.options, desc.args, desc.kwargs)
 	if err != nil {
