@@ -12,12 +12,12 @@ const (
 
 type resourceType int
 
-type WSResource interface {
+type WSEvent interface {
 	Type() resourceType
 	Decode(target interface{}) error
 }
 
-func makeEvent(eType int, data map[string]interface{}) WSResource {
+func makeEvent(eType int, data map[string]interface{}) WSEvent {
 	switch resourceType(eType) {
 	case CHANNEL_MESSAGE:
 		return keySerialize{CHANNEL_MESSAGE, data, "message"}

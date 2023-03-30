@@ -41,7 +41,8 @@ func MessageIn(channel string) sEvent {
 	}
 }
 
-func (chat *Chat) SubscribeEvent(desc sEvent, handle func(WSResource) error) func() {
+func (chat *Chat) _SubscribeEvent(desc sEvent, handle func(WSEvent) error) func() {
+
 	traceID := uuid.New().String()
 	chat.client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
@@ -67,21 +68,6 @@ func (chat *Chat) SubscribeEvent(desc sEvent, handle func(WSResource) error) fun
 	})
 
 	return func() { chat.ws.Unsubscribe(desc.topic) }
-}
-
-func (chat *Chat) IterEvent(desc sEvent) (<-chan WSResource, func()) {
-	traceID := uuid.New().String()
-	chat.client.log.WithFields(logrus.Fields{
-		"trace_id": traceID,
-		"topic":    desc.topic,
-		"options":  desc.options,
-	}).Trace("begin iter message")
-
-	result := make(chan WSResource)
-	return result, chat.SubscribeEvent(desc, func(chat WSResource) error {
-		result <- chat
-		return nil
-	})
 }
 
 type pMessage publish
