@@ -79,7 +79,20 @@ func (chat *Chat) Call(desc turnpike.Call, output interface{}) error {
 }
 
 func (chat *Chat) Publish(desc turnpike.Publish) error {
-	return chat.ws.Publish(string(desc.Topic), desc.Options, desc.Arguments, desc.ArgumentsKw)
+	log := chat.client.log.WithFields(logrus.Fields{
+		"trace_id": uuid.New().String(),
+		"type":     "PUBLISH",
+		"uri":      desc.Topic,
+		"options":  desc.Topic,
+	})
+
+	log.Trace("exec publish")
+	err := chat.ws.Publish(string(desc.Topic), desc.Options, desc.Arguments, desc.ArgumentsKw)
+	if err != nil {
+		log.Error(err)
+	}
+
+	return err
 }
 
 func (chat *Chat) Subscribe(desc turnpike.Subscribe, handle EventHandler) (func(), error) {
