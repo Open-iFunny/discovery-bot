@@ -27,7 +27,7 @@ func HideChannel(channel string) turnpike.Call {
 	return turnpike.Call{Procedure: URI("hide_chat")}
 }
 
-func dmChannel(self string, them []string) string {
+func DMChannelName(self string, them []string) string {
 	us := append(them, self)
 	sort.Strings(us)
 	size := len(us)
@@ -39,13 +39,13 @@ func dmChannel(self string, them []string) string {
 	return strings.Join(backwards, "_")
 }
 
-func DMChannel(id string, them ...string) turnpike.Call {
+func GetDMChannel(id string, them ...string) turnpike.Call {
 	return turnpike.Call{
 		Procedure: URI("get_or_create_chat"),
 		ArgumentsKw: map[string]interface{}{
 			"type":  ChannelDM,
 			"users": them,
-			"name":  dmChannel(id, them),
+			"name":  DMChannelName(id, them),
 		},
 	}
 }
