@@ -42,7 +42,7 @@ type Chat struct {
 }
 
 func jsonDecode(data, output interface{}) error {
-	config := &mapstructure.DecoderConfig{TagName: "json", Result: output}
+	config := &mapstructure.DecoderConfig{TagName: "json", Result: output, WeaklyTypedInput: true}
 	if decode, err := mapstructure.NewDecoder(config); err != nil {
 		return err
 	} else {
