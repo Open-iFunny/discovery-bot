@@ -1,5 +1,7 @@
 package ifunny
 
+import "github.com/gastrodon/popplio/ifunny/compose"
+
 type ChatChannel struct {
 	Name          string `json:"name"` // I think this is the unique id
 	Title         string `json:"title"`
@@ -18,4 +20,26 @@ type ChatChannel struct {
 
 		IsVerified bool `json:"is_verified"`
 	} `json:"user"`
+}
+
+func (chat *Chat) OnChannelJoin(handle func(channel *ChatChannel) error) (func(), error) {
+	return chat.Subscribe(compose.JoinedChannels(chat.client.Self.ID), func(eventType int, kwargs map[string]interface{}) error {
+		if kwargs["chats"] == nil {
+			chat.client.log.Warn("chats chunk is nil, skipping handler")
+			return nil
+		}
+
+		for _, channelRaw := range kwargs["chats"].([]interface{}) {
+			channel := new(ChatChannel)
+			if err := jsonDecode(channelRaw, channel); err != nil {
+				return err
+			}
+
+			if err := handle(channel); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
