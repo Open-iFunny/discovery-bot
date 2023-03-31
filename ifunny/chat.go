@@ -41,6 +41,15 @@ type Chat struct {
 	hello  map[string]interface{}
 }
 
+func jsonDecode(data, output interface{}) error {
+	config := &mapstructure.DecoderConfig{TagName: "json", Result: output}
+	if decode, err := mapstructure.NewDecoder(config); err != nil {
+		return err
+	} else {
+		return decode.Decode(data)
+	}
+}
+
 func (chat *Chat) Call(desc turnpike.Call, output interface{}) error {
 	log := chat.client.log.WithFields(logrus.Fields{
 		"trace_id": uuid.New().String(),
@@ -58,22 +67,12 @@ func (chat *Chat) Call(desc turnpike.Call, output interface{}) error {
 
 	log.Trace(fmt.Sprintf("call OK recv: %+v\n", result.ArgumentsKw))
 	if output != nil {
-		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-			Result:  output,
-			TagName: "json",
-		})
-
-		if err != nil {
+		if err := jsonDecode(result.ArgumentsKw, output); err != nil {
 			log.Error(err)
 			return err
 		}
 
-		err = decoder.Decode(result.ArgumentsKw)
-		if err != nil {
-			log.Error(err)
-		}
-
-		return err
+		return nil
 	}
 
 	return nil
