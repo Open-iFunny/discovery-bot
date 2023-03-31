@@ -74,10 +74,6 @@ func GetChannel(channel string) turnpike.Call {
 	}
 }
 
-const (
-	ChatsTrending = "/chats/trending"
+var (
+	ChatsTrending = Request{Method: "GET", Path: "/chats/trending"}
 )
-
-func GetChannels(path string) Request {
-	return Request{Method: "GET", Path: path}
-}
