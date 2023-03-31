@@ -64,3 +64,7 @@ func (client *Client) GetChannels(desc compose.Request) ([]*ChatChannel, error) 
 	err := client.RequestJSON(desc, output)
 	return output.Data.Channels, err
 }
+
+func (client *Client) DMChannelName(them ...string) string {
+	return compose.DMChannelName(client.Self.ID, them)
+}
