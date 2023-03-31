@@ -15,20 +15,20 @@ const (
 )
 
 func (client *Client) Chat() (*Chat, error) {
-	traceID := uuid.New().String()
-	client.log.WithField("trace_id", traceID).Trace("start websocket")
+	log := client.log.WithField("trace_id", uuid.New().String())
 
+	log.Trace("start connect chat")
 	ws, err := turnpike.NewWebsocketClient(turnpike.JSON, chatRoot, nil, nil, nil)
 	if err != nil {
-		client.log.WithField("trace_id", traceID).Error(err)
+		log.Error(err)
 		return nil, err
 	}
 
-	client.log.WithField("trace_id", traceID).Trace("join realm ifunny")
+	log.Trace("join realm ifunny")
 	ws.Auth = map[string]turnpike.AuthFunc{"ticket": turnpike.NewTicketAuthenticator(client.bearer)}
 	hello, err := ws.JoinRealm(string(compose.URI("ifunny")), nil)
 	if err != nil {
-		client.log.WithField("trace_id", err).Error(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -42,12 +42,11 @@ type Chat struct {
 }
 
 func (chat *Chat) call(desc turnpike.Call, output interface{}) error {
-	traceID := uuid.New().String()
 	log := chat.client.log.WithFields(logrus.Fields{
-		"trace_id":  traceID,
-		"type":      "CALL",
-		"procedure": desc.Procedure,
-		"kwargs":    desc.ArgumentsKw,
+		"trace_id": uuid.New().String(),
+		"type":     "CALL",
+		"uri":      desc.Procedure,
+		"kwargs":   desc.ArgumentsKw,
 	})
 
 	log.Trace("exec call")
@@ -59,7 +58,22 @@ func (chat *Chat) call(desc turnpike.Call, output interface{}) error {
 
 	log.Trace(fmt.Sprintf("call OK recv: %+v\n", result.ArgumentsKw))
 	if output != nil {
-		return mapstructure.Decode(result.ArgumentsKw, output)
+		decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+			Result:  output,
+			TagName: "json",
+		})
+
+		if err != nil {
+			log.Error(err)
+			return err
+		}
+
+		err = decoder.Decode(result.ArgumentsKw)
+		if err != nil {
+			log.Error(err)
+		}
+
+		return err
 	}
 
 	return nil
@@ -70,11 +84,10 @@ func (chat *Chat) publish(desc turnpike.Publish) error {
 }
 
 func (chat *Chat) subscribe(desc turnpike.Subscribe, handle EventHandler) (func(), error) {
-	traceID := uuid.New().String()
 	log := chat.client.log.WithFields(logrus.Fields{
-		"trace_id": traceID,
+		"trace_id": uuid.New().String(),
 		"type":     "SUBSCRIBE",
-		"topic":    desc.Topic,
+		"uri":      desc.Topic,
 		"options":  desc.Topic,
 	})
 

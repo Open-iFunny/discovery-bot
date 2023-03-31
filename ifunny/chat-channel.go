@@ -1,21 +1,21 @@
 package ifunny
 
 type ChatChannel struct {
-	Name          string `mapstructure:"name"` // I think this is the unique id
-	Title         string `mapstructure:"title"`
-	MembersOnline int    `mapstructure:"members_online"`
-	MembersTotal  int    `mapstructure:"members_total"`
+	Name          string `json:"name"` // I think this is the unique id
+	Title         string `json:"title"`
+	MembersOnline int    `json:"members_online"`
+	MembersTotal  int    `json:"members_total"`
 
-	Type      int   `mapstructure:"type"`       // 1 = dm, ??
-	JoinState int   `mapstructure:"join_state"` // 2 = true, ???
-	Role      int   `mapstructure:"role"`
-	TouchDT   int64 `mapstructure:"touch_dt"` // maybe when we last were online ??
+	Type      int   `json:"type"`       // 1 = dm, ??
+	JoinState int   `json:"join_state"` // 2 = true, ???
+	Role      int   `json:"role"`
+	TouchDT   int64 `json:"touch_dt"` // maybe when we last were online ??
 
 	User struct {
-		ID         string `mapstructure:"id"`
-		Nick       string `mapstructure:"nick"`
-		LastSeenAt int64  `mapstructure:"last_seen_at"`
+		ID         string `json:"id"`
+		Nick       string `json:"nick"`
+		LastSeenAt int64  `json:"last_seen_at"`
 
-		IsVerified bool `mapstructure:"is_verified"`
-	} `mapstructure:"user"`
+		IsVerified bool `json:"is_verified"`
+	} `json:"user"`
 }
