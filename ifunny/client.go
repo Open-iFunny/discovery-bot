@@ -23,12 +23,12 @@ func MakeClient(bearer, userAgent string) (*Client, error) {
 	client.log.SetFormatter(&logrus.JSONFormatter{})
 	client.log.SetLevel(LogLevel)
 
-	// self, err := client.User(UserAccount)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	self, err := client.GetUser(compose.UserAccount())
+	if err != nil {
+		return nil, err
+	}
 
-	// client.Self = &self
+	client.Self = self
 	return client, nil
 }
 

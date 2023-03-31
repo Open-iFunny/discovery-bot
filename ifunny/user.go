@@ -1,5 +1,7 @@
 package ifunny
 
+import "github.com/gastrodon/popplio/ifunny/compose"
+
 type APIUser struct {
 	Email            string `json:"email"`
 	SafeMode         bool   `json:"safe_mode"`
@@ -15,4 +17,13 @@ type APIUser struct {
 	IsDeleted          bool `json:"is_deleted"`
 	IsModerator        bool `json:"is_moderator"`
 	IsVerified         bool `json:"is_verified"`
+}
+
+func (client *Client) GetUser(desc compose.Request) (*APIUser, error) {
+	user := new(struct {
+		Data APIUser `json:"data"`
+	})
+
+	err := client.RequestJSON(desc, user)
+	return &user.Data, err
 }
