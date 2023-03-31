@@ -53,3 +53,14 @@ func (chat *Chat) OnChannelJoin(handle func(channel *ChatChannel) error) (func()
 func (chat *Chat) OnChannelInvite(handle func(channel *ChatChannel) error) (func(), error) {
 	return chat.Subscribe(compose.PendingInvites(chat.client.Self.ID), chat.handleChannelsRaw(handle))
 }
+
+func (client *Client) GetChannels(desc compose.Request) ([]*ChatChannel, error) {
+	output := new(struct {
+		Data struct {
+			Channels []*ChatChannel `json:"channels"`
+		} `json:"data"`
+	})
+
+	err := client.RequestJSON(desc, output)
+	return output.Data.Channels, err
+}
