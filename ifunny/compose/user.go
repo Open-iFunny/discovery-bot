@@ -12,6 +12,13 @@ func Contacts(limit int) turnpike.Call {
 	}
 }
 
+func SearchContacts(query string, limit int) turnpike.Call {
+	return turnpike.Call{
+		Procedure:   URI("search_contacts"),
+		ArgumentsKw: map[string]interface{}{"query": query, "limit": limit},
+	}
+}
+
 func UserByID(id string) Request {
 	return get("/users/"+id, nil)
 }
