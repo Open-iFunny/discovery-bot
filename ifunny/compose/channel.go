@@ -15,6 +15,10 @@ const (
 	ChannelPublic  channelType = 3
 )
 
+func PendingInvites(id string) turnpike.Subscribe {
+	return turnpike.Subscribe{Topic: URI("user." + id + ".invites")}
+}
+
 func JoinedChannels(id string) turnpike.Subscribe {
 	return turnpike.Subscribe{Topic: URI("user." + id + ".chats")}
 }

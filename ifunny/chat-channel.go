@@ -1,6 +1,8 @@
 package ifunny
 
-import "github.com/gastrodon/popplio/ifunny/compose"
+import (
+	"github.com/gastrodon/popplio/ifunny/compose"
+)
 
 type ChatChannel struct {
 	Name          string `json:"name"` // I think this is the unique id
@@ -22,14 +24,14 @@ type ChatChannel struct {
 	} `json:"user"`
 }
 
-func (chat *Chat) OnChannelJoin(handle func(channel *ChatChannel) error) (func(), error) {
-	return chat.Subscribe(compose.JoinedChannels(chat.client.Self.ID), func(eventType int, kwargs map[string]interface{}) error {
-		if kwargs["chats"] == nil {
-			chat.client.log.Warn("chats chunk is nil, skipping handler")
-			return nil
-		}
-
+func (chat *Chat) handleChannelsRaw(handle func(channel *ChatChannel) error) EventHandler {
+	return func(eventType int, kwargs map[string]interface{}) error {
 		for _, channelRaw := range kwargs["chats"].([]interface{}) {
+			if kwargs["chats"] == nil {
+				chat.client.log.Warn("chats chunk is nil, skipping handler")
+				return nil
+			}
+
 			channel := new(ChatChannel)
 			if err := jsonDecode(channelRaw, channel); err != nil {
 				return err
@@ -41,5 +43,13 @@ func (chat *Chat) OnChannelJoin(handle func(channel *ChatChannel) error) (func()
 		}
 
 		return nil
-	})
+	}
+}
+
+func (chat *Chat) OnChannelJoin(handle func(channel *ChatChannel) error) (func(), error) {
+	return chat.Subscribe(compose.JoinedChannels(chat.client.Self.ID), chat.handleChannelsRaw(handle))
+}
+
+func (chat *Chat) OnChannelInvite(handle func(channel *ChatChannel) error) (func(), error) {
+	return chat.Subscribe(compose.PendingInvites(chat.client.Self.ID), chat.handleChannelsRaw(handle))
 }
