@@ -2,6 +2,7 @@ package ifunny
 
 import (
 	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/jcelliott/turnpike"
 )
 
 const (
@@ -45,4 +46,45 @@ func (chat *Chat) OnChanneEvent(channel string, handle func(event *ChatEvent) er
 
 		return handle(message)
 	})
+}
+
+func (chat *Chat) ListMessages(desc turnpike.Call) ([]*ChatEvent, int64, int64, error) {
+	output := new(struct {
+		Messages []*ChatEvent `json:"messages"`
+		Prev     int64        `json:"prev"`
+		Next     int64        `json:"next"`
+	})
+
+	err := chat.Call(desc, output)
+	return output.Messages, output.Prev, output.Next, err
+}
+
+func (chat *Chat) IterMessages(desc turnpike.Call) <-chan *ChatEvent {
+	output := make(chan *ChatEvent)
+	go func() {
+		buffer, _, next, err := chat.ListMessages(desc)
+		if err != nil {
+			panic(err) // shrug emoji
+		}
+
+		for _, event := range buffer {
+			output <- event
+		}
+
+		for next != 0 {
+			desc.ArgumentsKw["next"] = next
+			buffer, _, next, err = chat.ListMessages(desc)
+			if err != nil {
+				panic(err) // eye roll emoji
+			}
+
+			for _, event := range buffer {
+				output <- event
+			}
+		}
+
+		close(output)
+	}()
+
+	return output
 }

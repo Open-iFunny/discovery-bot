@@ -1,6 +1,8 @@
 package compose
 
-import "github.com/jcelliott/turnpike"
+import (
+	"github.com/jcelliott/turnpike"
+)
 
 /*
 publish a text message to a channel
@@ -26,4 +28,20 @@ func EventsIn(channel string) turnpike.Subscribe {
 		Topic:   URI("chat." + channel),
 		Options: nil,
 	}
+}
+
+func ListMessages(channel string, limit int, page Page) turnpike.Call {
+	call := turnpike.Call{
+		Procedure: URI("list_messages"),
+		ArgumentsKw: map[string]interface{}{
+			"chat_name": channel,
+			"limit":     limit,
+		},
+	}
+
+	if page.Key != NONE {
+		call.ArgumentsKw[string(page.Key)] = page.Value
+	}
+
+	return call
 }
