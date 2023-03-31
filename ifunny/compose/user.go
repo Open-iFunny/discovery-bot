@@ -20,6 +20,6 @@ func UserByNick(nick string) Request {
 	return get("/users/by_nick/"+nick, nil)
 }
 
-func UserAccount(path string) Request {
+func UserAccount() Request {
 	return get("/account", nil)
 }
