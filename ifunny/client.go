@@ -47,7 +47,7 @@ type Client struct {
 	http              *http.Client
 	log               *logrus.Logger
 
-	Self *APIUser
+	Self *User
 }
 
 func request(desc compose.Request, header http.Header, client *http.Client) (*http.Response, error) {

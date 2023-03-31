@@ -1,8 +1,11 @@
 package ifunny
 
-import "github.com/gastrodon/popplio/ifunny/compose"
+import (
+	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/jcelliott/turnpike"
+)
 
-type APIUser struct {
+type User struct {
 	Email            string `json:"email"`
 	SafeMode         bool   `json:"safe_mode"`
 	OriginalNick     string `json:"original_nick"`
@@ -19,11 +22,20 @@ type APIUser struct {
 	IsVerified         bool `json:"is_verified"`
 }
 
-func (client *Client) GetUser(desc compose.Request) (*APIUser, error) {
+func (client *Client) GetUser(desc compose.Request) (*User, error) {
 	user := new(struct {
-		Data APIUser `json:"data"`
+		Data User `json:"data"`
 	})
 
 	err := client.RequestJSON(desc, user)
 	return &user.Data, err
+}
+
+func (chat *Chat) GetUsers(desc turnpike.Call) ([]*User, error) {
+	output := new(struct {
+		Users []*User `json:"users"`
+	})
+
+	err := chat.Call(desc, output)
+	return output.Users, err
 }
