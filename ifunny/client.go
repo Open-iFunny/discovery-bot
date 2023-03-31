@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/gastrodon/popplio/ifunny/compose"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -21,12 +22,12 @@ func MakeClient(bearer, userAgent string) (*Client, error) {
 	client.log.SetFormatter(&logrus.JSONFormatter{})
 	client.log.SetLevel(LogLevel)
 
-	self, err := client.User(UserAccount)
-	if err != nil {
-		return nil, err
-	}
+	// self, err := client.User(UserAccount)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	client.Self = &self
+	// client.Self = &self
 	return client, nil
 }
 
@@ -48,12 +49,14 @@ type Client struct {
 	Self *APIUser
 }
 
-func request(method, path string, body io.Reader, header http.Header, client *http.Client) (*http.Response, error) {
-	request, err := http.NewRequest(method, apiRoot+path, body)
+func request(desc compose.Request, header http.Header, client *http.Client) (*http.Response, error) {
+	request, err := http.NewRequest(desc.Method, apiRoot+desc.Path, desc.Body)
 	if err != nil {
 		return nil, err
 	}
 	request.Header = header
+	request.URL.RawQuery = desc.Query.Encode()
+
 	return client.Do(request)
 }
 
@@ -65,30 +68,32 @@ func (client *Client) header() http.Header {
 	}
 }
 
-func (client *Client) apiRequest(apiBody interface{}, method, path string, body io.Reader) error {
+func (client *Client) requestJSON(desc compose.Request, output interface{}) error {
 	traceID := uuid.New().String()
-	client.log.WithFields(logrus.Fields{
+	log := client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,
-		"path":     path,
-		"method":   method,
-		"has_body": body != nil},
-	).Trace("make request")
+		"path":     desc.Path,
+		"method":   desc.Method,
+		"query":    desc.Query.Encode(),
+		"has_body": desc.Body != nil},
+	)
 
-	response, err := request(method, path, body, client.header(), client.http)
+	log.Trace("make request")
+	response, err := request(desc, client.header(), client.http)
 	if err != nil {
-		client.log.WithField("trace_id", traceID).Error(err)
+		log.Error(err)
 		return err
 	}
 
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
-		client.log.WithField("trace_id", traceID).Error(err)
+		log.Error(err)
 		return err
 	}
 
-	err = json.Unmarshal(bodyBytes, apiBody)
+	err = json.Unmarshal(bodyBytes, output)
 	if err != nil {
-		client.log.WithField("trace_id", traceID).Error(err)
+		log.Error(err)
 	}
 
 	return err

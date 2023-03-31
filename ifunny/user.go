@@ -16,23 +16,3 @@ type APIUser struct {
 	IsModerator        bool `json:"is_moderator"`
 	IsVerified         bool `json:"is_verified"`
 }
-
-type rUser string
-
-const (
-	UserAccount rUser = "/account"
-)
-
-var (
-	UserByID   = func(id string) rUser { return rUser("/users/" + id) }
-	UserByNick = func(nick string) rUser { return rUser("/users/by_nick/" + nick) }
-)
-
-func (client *Client) User(path rUser) (APIUser, error) {
-	response := new(struct {
-		Data APIUser `json:"data"`
-	})
-
-	err := client.apiRequest(response, "GET", string(path), nil)
-	return response.Data, err
-}

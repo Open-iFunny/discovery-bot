@@ -1,35 +1,18 @@
 package ifunny
 
 import (
+	"fmt"
+
+	"github.com/gastrodon/popplio/ifunny/compose"
 	"github.com/google/uuid"
 	"github.com/jcelliott/turnpike"
+	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 )
-
-type call struct {
-	procedure string
-	options   map[string]interface{}
-	args      []interface{}
-	kwargs    map[string]interface{}
-}
-
-type subscribe struct {
-	topic   string
-	options map[string]interface{}
-}
-
-type publish struct {
-	topic   string
-	options map[string]interface{}
-	args    []interface{}
-	kwargs  map[string]interface{}
-}
 
 const (
-	chatRoot      = "wss://chat.ifunny.co/chat"
-	chatNamespace = "co.fun.chat"
+	chatRoot = "wss://chat.ifunny.co/chat"
 )
-
-func uri(name string) string { return chatNamespace + "." + name }
 
 func (client *Client) Chat() (*Chat, error) {
 	traceID := uuid.New().String()
@@ -43,7 +26,7 @@ func (client *Client) Chat() (*Chat, error) {
 
 	client.log.WithField("trace_id", traceID).Trace("join realm ifunny")
 	ws.Auth = map[string]turnpike.AuthFunc{"ticket": turnpike.NewTicketAuthenticator(client.bearer)}
-	hello, err := ws.JoinRealm(uri("ifunny"), nil)
+	hello, err := ws.JoinRealm(string(compose.URI("ifunny")), nil)
 	if err != nil {
 		client.log.WithField("trace_id", err).Error(err)
 		return nil, err
@@ -56,4 +39,63 @@ type Chat struct {
 	ws     *turnpike.Client
 	client *Client
 	hello  map[string]interface{}
+}
+
+func (chat *Chat) call(desc turnpike.Call, output interface{}) error {
+	traceID := uuid.New().String()
+	log := chat.client.log.WithFields(logrus.Fields{
+		"trace_id":  traceID,
+		"type":      "CALL",
+		"procedure": desc.Procedure,
+		"kwargs":    desc.ArgumentsKw,
+	})
+
+	log.Trace("exec call")
+	result, err := chat.ws.Call(string(desc.Procedure), desc.Options, desc.Arguments, desc.ArgumentsKw)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	log.Trace(fmt.Sprintf("call OK recv: %+v\n", result.ArgumentsKw))
+	if output != nil {
+		return mapstructure.Decode(result.ArgumentsKw, output)
+	}
+
+	return nil
+}
+
+func (chat *Chat) publish(desc turnpike.Publish) error {
+	return chat.ws.Publish(string(desc.Topic), desc.Options, desc.Arguments, desc.ArgumentsKw)
+}
+
+func (chat *Chat) subscribe(desc turnpike.Subscribe, handle EventHandler) (func(), error) {
+	traceID := uuid.New().String()
+	log := chat.client.log.WithFields(logrus.Fields{
+		"trace_id": traceID,
+		"type":     "SUBSCRIBE",
+		"topic":    desc.Topic,
+		"options":  desc.Topic,
+	})
+
+	log.Trace("exec subscribe")
+	err := chat.ws.Subscribe(string(desc.Topic), desc.Options, func(args []interface{}, kwargs map[string]interface{}) {
+		eType := 0
+		if kwargs["type"] == nil {
+			log.WithField("kwargs", kwargs).Warn("event kwargs missing type")
+			eType = EVENT_UNKNOWN
+		} else if eFloat, ok := kwargs["type"].(float64); ok {
+			log.WithField("event_type", eType).Warn(fmt.Sprintf("event type was float %.4f", kwargs["type"]))
+			eType = int(eFloat)
+		} else {
+			eType = kwargs["type"].(int)
+		}
+
+		log.WithField("event_type", eType).Trace("exec handle")
+		if err := handle(eType, kwargs); err != nil {
+			log.Error(err)
+		}
+	})
+
+	return func() { chat.ws.Unsubscribe(string(desc.Topic)) }, err
 }
