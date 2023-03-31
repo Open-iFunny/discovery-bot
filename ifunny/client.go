@@ -68,7 +68,7 @@ func (client *Client) header() http.Header {
 	}
 }
 
-func (client *Client) requestJSON(desc compose.Request, output interface{}) error {
+func (client *Client) RequestJSON(desc compose.Request, output interface{}) error {
 	traceID := uuid.New().String()
 	log := client.log.WithFields(logrus.Fields{
 		"trace_id": traceID,

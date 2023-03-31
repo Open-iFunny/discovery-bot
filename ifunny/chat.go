@@ -41,7 +41,7 @@ type Chat struct {
 	hello  map[string]interface{}
 }
 
-func (chat *Chat) call(desc turnpike.Call, output interface{}) error {
+func (chat *Chat) Call(desc turnpike.Call, output interface{}) error {
 	log := chat.client.log.WithFields(logrus.Fields{
 		"trace_id": uuid.New().String(),
 		"type":     "CALL",
@@ -79,11 +79,11 @@ func (chat *Chat) call(desc turnpike.Call, output interface{}) error {
 	return nil
 }
 
-func (chat *Chat) publish(desc turnpike.Publish) error {
+func (chat *Chat) Publish(desc turnpike.Publish) error {
 	return chat.ws.Publish(string(desc.Topic), desc.Options, desc.Arguments, desc.ArgumentsKw)
 }
 
-func (chat *Chat) subscribe(desc turnpike.Subscribe, handle EventHandler) (func(), error) {
+func (chat *Chat) Subscribe(desc turnpike.Subscribe, handle EventHandler) (func(), error) {
 	log := chat.client.log.WithFields(logrus.Fields{
 		"trace_id": uuid.New().String(),
 		"type":     "SUBSCRIBE",
