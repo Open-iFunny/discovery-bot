@@ -2,6 +2,7 @@ package ifunny
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -85,12 +86,14 @@ func (client *Client) RequestJSON(desc compose.Request, output interface{}) erro
 		return err
 	}
 
+	log.Trace(fmt.Sprintf("got response %s", response.Status))
 	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 
+	log.Trace(fmt.Sprintf("got response body %s", string(bodyBytes)))
 	err = json.Unmarshal(bodyBytes, output)
 	if err != nil {
 		log.Error(err)
