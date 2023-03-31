@@ -2,6 +2,7 @@ package bot
 
 import (
 	"github.com/gastrodon/popplio/ifunny"
+	"github.com/gastrodon/popplio/ifunny/compose"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
@@ -16,7 +17,7 @@ type Bot struct {
 	Chat   *ifunny.Chat
 	log    *logrus.Logger
 
-	recvEvents   chan ifunny.WSResource
+	recvEvents   chan map[string]interface{}
 	unsubEvents  map[string]func()
 	handleEvents map[string]filtHandler
 }
@@ -39,7 +40,7 @@ func MakeBot(bearer, userAgent string) (*Bot, error) {
 		Client:       client,
 		Chat:         chat,
 		log:          log,
-		recvEvents:   make(chan ifunny.WSResource),
+		recvEvents:   make(chan map[string]interface{}),
 		unsubEvents:  make(map[string]func()),
 		handleEvents: make(map[string]filtHandler, 0),
 	}, nil
@@ -56,7 +57,7 @@ func (bot *Bot) Subscribe(channel string) {
 		unsub()
 	}
 
-	bot.Chat.SubscribeEvent(ifunny.MessageIn(channel), func(event ifunny.WSResource) error {
+	bot.Chat.Subscribe(compose.EventsIn(channel), func(eventType int, event map[string]interface{}) error {
 		bot.recvEvents <- event
 		return nil
 	})

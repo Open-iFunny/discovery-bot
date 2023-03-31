@@ -1,13 +1,12 @@
 package bot
 
 import (
-	"github.com/gastrodon/popplio/ifunny"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
-type filter func(event ifunny.WSResource) bool
-type handler func(event ifunny.WSResource) error
+type filter func(event map[string]interface{}) bool
+type handler func(event map[string]interface{}) error
 
 func (bot *Bot) On(filter filter, handle handler) func() {
 	eventID := uuid.New().String()
@@ -18,9 +17,9 @@ func (bot *Bot) On(filter filter, handle handler) func() {
 
 func (bot *Bot) Listen() {
 	for event := range bot.recvEvents {
-		go func(handlers map[string]filtHandler, event ifunny.WSResource) {
+		go func(handlers map[string]filtHandler, event map[string]interface{}) {
 			log := bot.log.WithFields(logrus.Fields{
-				"event_type": event.Type(),
+				"event_type": event["type"],
 			})
 
 			log.Trace("start handling")
