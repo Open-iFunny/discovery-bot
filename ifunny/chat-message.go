@@ -7,7 +7,7 @@ import (
 
 const (
 	UNK_0 messageType = iota
-	MESSAGE
+	TEXT_MESSAGE
 	UNK_2
 	JOIN_CHANNEL
 	EXIT_CHANNEL
