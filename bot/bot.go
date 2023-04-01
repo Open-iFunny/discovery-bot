@@ -17,7 +17,7 @@ type Bot struct {
 	Chat   *ifunny.Chat
 	log    *logrus.Logger
 
-	recvEvents   chan map[string]interface{}
+	recvEvents   chan *ifunny.ChatEvent
 	unsubEvents  map[string]func()
 	handleEvents map[string]filtHandler
 }
@@ -40,7 +40,7 @@ func MakeBot(bearer, userAgent string) (*Bot, error) {
 		Client:       client,
 		Chat:         chat,
 		log:          log,
-		recvEvents:   make(chan map[string]interface{}),
+		recvEvents:   make(chan *ifunny.ChatEvent),
 		unsubEvents:  make(map[string]func()),
 		handleEvents: make(map[string]filtHandler, 0),
 	}, nil
@@ -53,9 +53,25 @@ func (bot *Bot) Subscribe(channel string) {
 		unsub()
 	}
 
-	bot.Chat.Subscribe(compose.EventsIn(channel), func(eventType int, event map[string]interface{}) error {
-		log.WithFields(logrus.Fields{"event_type": eventType, "channel": channel}).Trace("handle event")
-		bot.recvEvents <- event
+	bot.Chat.Subscribe(compose.EventsIn(channel), func(eventType int, eventKW map[string]interface{}) error {
+		log = log.WithFields(logrus.Fields{"event_type": eventType, "channel": channel})
+		log.Trace("handle event")
+
+		switch eventType {
+		default:
+			event := new(struct {
+				Message ifunny.ChatEvent `json:"message"`
+			})
+
+			if err := ifunny.JSONDecode(eventKW, event); err != nil {
+				log.WithField("kwargs", eventKW).Error(err)
+				return err
+			}
+
+			log.Trace("push default event")
+			bot.recvEvents <- &event.Message
+		}
+
 		return nil
 	})
 }
