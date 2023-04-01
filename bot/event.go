@@ -1,33 +1,47 @@
 package bot
 
 import (
+	"github.com/gastrodon/popplio/ifunny"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 )
 
-type filter func(event map[string]interface{}) bool
-type handler func(event map[string]interface{}) error
+type filter func(event *ifunny.ChatEvent) bool
+type handler func(event *ifunny.ChatEvent) error
 
 func (bot *Bot) On(filter filter, handle handler) func() {
-	eventID := uuid.New().String()
-	bot.handleEvents[eventID] = filtHandler{filter, handle}
+	handleID := uuid.New().String()
+	log := bot.log.WithField("handle_id", handleID)
 
-	return func() { delete(bot.handleEvents, eventID) }
+	log.Trace("register on")
+	bot.handleEvents[handleID] = filtHandler{filter, handle}
+
+	return func() {
+		log.Trace("delete on")
+		delete(bot.handleEvents, handleID)
+	}
+}
+
+func (bot *Bot) OnMessage(handle handler) func() {
+	return bot.On(func(event *ifunny.ChatEvent) bool {
+		return event.Type == ifunny.TEXT_MESSAGE
+	}, handle)
 }
 
 func (bot *Bot) Listen() {
-	for event := range bot.recvEvents {
-		go func(handlers map[string]filtHandler, event map[string]interface{}) {
-			log := bot.log.WithFields(logrus.Fields{"event_type": event["type"]})
-			log.Trace("start handling")
+	log := bot.log.WithField("trace_id", uuid.NewString())
+	log.Trace("start event listening")
 
-			for id, filtHandle := range handlers {
-				if filtHandle.filter(event) {
-					if err := filtHandle.handle(event); err != nil {
-						log.WithField("handle_id", id).Error(err)
-					}
+	for event := range bot.recvEvents {
+		log.WithField("event_id", event.ID).Trace("recv event")
+
+		for id, filtHandle := range bot.handleEvents {
+			if filtHandle.filter(event) {
+				log.WithField("handle_id", id).Trace("filter ok")
+
+				if err := filtHandle.handle(event); err != nil {
+					log.WithField("handle_id", id).Error(err)
 				}
 			}
-		}(bot.handleEvents, event)
+		}
 	}
 }
