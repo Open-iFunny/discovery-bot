@@ -18,11 +18,9 @@ func (bot *Bot) On(filter filter, handle handler) func() {
 func (bot *Bot) Listen() {
 	for event := range bot.recvEvents {
 		go func(handlers map[string]filtHandler, event map[string]interface{}) {
-			log := bot.log.WithFields(logrus.Fields{
-				"event_type": event["type"],
-			})
-
+			log := bot.log.WithFields(logrus.Fields{"event_type": event["type"]})
 			log.Trace("start handling")
+
 			for id, filtHandle := range handlers {
 				if filtHandle.filter(event) {
 					if err := filtHandle.handle(event); err != nil {

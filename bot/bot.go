@@ -47,29 +47,23 @@ func MakeBot(bearer, userAgent string) (*Bot, error) {
 }
 
 func (bot *Bot) Subscribe(channel string) {
-	traceID := uuid.New().String()
+	log := bot.log.WithFields(logrus.Fields{"trace_id": uuid.New().String(), "channel_name": channel})
 	if unsub, ok := bot.unsubEvents[channel]; ok {
-		bot.log.WithFields(logrus.Fields{
-			"trace_id":     traceID,
-			"channel_name": channel,
-		}).Warn("SubscribeChat on subscribed channel")
-
+		log.Warn("SubscribeChat on subscribed channel")
 		unsub()
 	}
 
 	bot.Chat.Subscribe(compose.EventsIn(channel), func(eventType int, event map[string]interface{}) error {
+		log.WithFields(logrus.Fields{"event_type": eventType, "channel": channel}).Trace("handle event")
 		bot.recvEvents <- event
 		return nil
 	})
 }
 
 func (bot *Bot) Unsubscribe(channel string) {
-	traceID := uuid.New().String()
+	log := bot.log.WithFields(logrus.Fields{"trace_id": uuid.New().String(), "channel_name": channel})
 	if unsub, ok := bot.unsubEvents[channel]; !ok {
-		bot.log.WithFields(logrus.Fields{
-			"trace_id":     traceID,
-			"channel_name": channel,
-		}).Warn("UnsubscribeChat on not subscribed channel")
+		log.Warn("UnsubscribeChat on not subscribed channel")
 	} else {
 		unsub()
 	}
