@@ -40,7 +40,7 @@ func (chat *Chat) OnChanneEvent(channel string, handle func(event *ChatEvent) er
 		}
 
 		message := new(ChatEvent)
-		if err := jsonDecode(kwargs["message"], message); err != nil {
+		if err := JSONDecode(kwargs["message"], message); err != nil {
 			return err
 		}
 

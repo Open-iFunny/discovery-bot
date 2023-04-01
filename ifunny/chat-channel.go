@@ -33,7 +33,7 @@ func (chat *Chat) handleChannelsRaw(handle func(channel *ChatChannel) error) Eve
 			}
 
 			channel := new(ChatChannel)
-			if err := jsonDecode(channelRaw, channel); err != nil {
+			if err := JSONDecode(channelRaw, channel); err != nil {
 				return err
 			}
 

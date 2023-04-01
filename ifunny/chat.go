@@ -41,7 +41,7 @@ type Chat struct {
 	hello  map[string]interface{}
 }
 
-func jsonDecode(data, output interface{}) error {
+func JSONDecode(data, output interface{}) error {
 	config := &mapstructure.DecoderConfig{TagName: "json", Result: output, WeaklyTypedInput: true}
 	if decode, err := mapstructure.NewDecoder(config); err != nil {
 		return err
@@ -67,7 +67,7 @@ func (chat *Chat) Call(desc turnpike.Call, output interface{}) error {
 
 	log.Trace(fmt.Sprintf("call OK recv: %+v\n", result.ArgumentsKw))
 	if output != nil {
-		if err := jsonDecode(result.ArgumentsKw, output); err != nil {
+		if err := JSONDecode(result.ArgumentsKw, output); err != nil {
 			log.Error(err)
 			return err
 		}
