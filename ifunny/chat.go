@@ -106,14 +106,8 @@ func (chat *Chat) Subscribe(desc turnpike.Subscribe, handle EventHandler) (func(
 	log.Trace("exec subscribe")
 	err := chat.ws.Subscribe(string(desc.Topic), desc.Options, func(args []interface{}, kwargs map[string]interface{}) {
 		eType := 0
-		if kwargs["type"] == nil {
-			log.WithField("kwargs", kwargs).Warn("event kwargs missing type")
-			eType = EVENT_UNKNOWN
-		} else if eFloat, ok := kwargs["type"].(float64); ok {
-			log.WithField("event_type", eType).Warn(fmt.Sprintf("event type was float %.4f", kwargs["type"]))
-			eType = int(eFloat)
-		} else {
-			eType = kwargs["type"].(int)
+		if err := JSONDecode(kwargs["type"], &eType); err != nil {
+			log.Error(err)
 		}
 
 		log.WithField("event_type", eType).Trace("exec handle")
