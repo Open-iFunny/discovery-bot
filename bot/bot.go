@@ -17,7 +17,7 @@ type Bot struct {
 	Chat   *ifunny.Chat
 	Log    *logrus.Logger
 
-	recvEvents   chan *ifunny.ChatEvent
+	recvEvents   chan Context
 	unsubEvents  map[string]func()
 	handleEvents map[string]filtHandler
 }
@@ -40,7 +40,7 @@ func MakeBot(bearer, userAgent string) (*Bot, error) {
 		Client:       client,
 		Chat:         chat,
 		Log:          log,
-		recvEvents:   make(chan *ifunny.ChatEvent),
+		recvEvents:   make(chan Context),
 		unsubEvents:  make(map[string]func()),
 		handleEvents: make(map[string]filtHandler, 0),
 	}, nil
@@ -69,7 +69,11 @@ func (bot *Bot) Subscribe(channel string) {
 			}
 
 			log.Trace("push default event")
-			bot.recvEvents <- &event.Message
+			if ctx, err := bot.makeCtx(channel, &event.Message); err != nil {
+				return err
+			} else {
+				bot.recvEvents <- ctx
+			}
 		}
 
 		return nil

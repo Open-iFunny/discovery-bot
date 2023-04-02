@@ -5,8 +5,8 @@ import (
 	"github.com/google/uuid"
 )
 
-type filter func(event *ifunny.ChatEvent) bool
-type handler func(event *ifunny.ChatEvent) error
+type filter func(ctx Context) (bool, error)
+type handler func(ctx Context) error
 
 func (bot *Bot) On(filter filter, handle handler) func() {
 	handleID := uuid.New().String()
@@ -22,26 +22,42 @@ func (bot *Bot) On(filter filter, handle handler) func() {
 }
 
 func (bot *Bot) OnMessage(handle handler) func() {
-	return bot.On(func(event *ifunny.ChatEvent) bool {
-		return event.Type == ifunny.TEXT_MESSAGE
+	return bot.On(func(ctx Context) (bool, error) {
+		if event, err := ctx.Event(); err != nil {
+			return false, err
+		} else {
+			return event.Type == ifunny.TEXT_MESSAGE, nil
+		}
 	}, handle)
 }
 
-func (bot *Bot) Listen() {
+func (bot *Bot) Listen() error {
 	log := bot.Log.WithField("trace_id", uuid.NewString())
 	log.Trace("start event listening")
 
-	for event := range bot.recvEvents {
-		log.WithField("event_id", event.ID).Trace("recv event")
+	for ctx := range bot.recvEvents {
+		event, err := ctx.Event()
+		if err != nil {
+			log.Error(err)
+			return err
+		}
 
+		eLog := log.WithField("event_id", event.ID)
+		eLog.Trace("recv ctx")
 		for id, filtHandle := range bot.handleEvents {
-			if filtHandle.filter(event) {
-				log.WithField("handle_id", id).Trace("filter ok")
+			if ok, err := filtHandle.filter(ctx); err != nil {
+				eLog.Error(err)
+				return err
+			} else if ok {
+				eLog.WithField("handle_id", id).Trace("filter ok")
 
-				if err := filtHandle.handle(event); err != nil {
-					log.WithField("handle_id", id).Error(err)
+				if err := filtHandle.handle(ctx); err != nil {
+					eLog.WithField("handle_id", id).Error(err)
+					return err
 				}
 			}
 		}
 	}
+
+	return nil
 }

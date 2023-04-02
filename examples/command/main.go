@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/gastrodon/popplio/bot"
 	"github.com/gastrodon/popplio/ifunny"
+	"github.com/gastrodon/popplio/ifunny/compose"
 )
 
 var bearer = os.Getenv("IFUNNY_BEARER")
@@ -18,14 +18,20 @@ func main() {
 	}
 
 	prefix := bot.Prefix(".")
-	robot.On(prefix.Cmd("ping").And(bot.AuthoredBy("gastrodon")), func(event *ifunny.ChatEvent) error {
-		fmt.Printf("we got a ping from ourselves\n")
-		return nil
+	robot.On(prefix.Cmd("ping").And(bot.AuthoredBy("gastrodon")), func(ctx bot.Context) error {
+		if channel, err := ctx.Channel(); err != nil {
+			return err
+		} else {
+			return robot.Chat.Publish(compose.MessageTo(channel.Name, "Hi:)"))
+		}
 	})
 
-	robot.On(prefix.Cmd("ping").Not(bot.AuthoredBy("gastrodon")), func(event *ifunny.ChatEvent) error {
-		fmt.Printf("we got a ping from somebody else\n")
-		return nil
+	robot.On(prefix.Cmd("ping").Not(bot.AuthoredBy("gastrodon")), func(ctx bot.Context) error {
+		if channel, err := ctx.Channel(); err != nil {
+			return err
+		} else {
+			return robot.Chat.Publish(compose.MessageTo(channel.Name, "I don't trust like that..."))
+		}
 	})
 
 	robot.Chat.OnChannelUpdate(func(eventType int, channel *ifunny.ChatChannel) error {
