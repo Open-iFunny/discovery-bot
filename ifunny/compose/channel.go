@@ -97,6 +97,13 @@ func JoinChannel(channel string) turnpike.Call {
 	}
 }
 
+func ExitChannel(channel string) turnpike.Call {
+	return turnpike.Call{
+		Procedure:   URI("leave_chat"),
+		ArgumentsKw: map[string]interface{}{"chat_name": channel},
+	}
+}
+
 var (
 	ChatsTrending = Request{Method: "GET", Path: "/chats/trending"}
 )
