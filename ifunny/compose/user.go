@@ -19,6 +19,13 @@ func SearchContacts(query string, limit int) turnpike.Call {
 	}
 }
 
+func Operators(channel string) turnpike.Call {
+	return turnpike.Call{
+		Procedure:   URI("list_operators"),
+		ArgumentsKw: map[string]interface{}{"chat_name": channel},
+	}
+}
+
 func UserByID(id string) Request {
 	return get("/users/"+id, nil)
 }
