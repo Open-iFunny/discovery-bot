@@ -24,7 +24,10 @@ func JoinedChannels(id string) turnpike.Subscribe {
 }
 
 func HideChannel(channel string) turnpike.Call {
-	return turnpike.Call{Procedure: URI("hide_chat")}
+	return turnpike.Call{
+		Procedure:   URI("hide_chat"),
+		ArgumentsKw: map[string]interface{}{"chat_name": channel},
+	}
 }
 
 func DMChannelName(self string, them []string) string {
