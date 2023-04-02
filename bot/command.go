@@ -16,6 +16,12 @@ func (us filter) And(also filter) filter {
 	}
 }
 
+func (us filter) Not(also filter) filter {
+	return func(event *ifunny.ChatEvent) bool {
+		return us(event) && !also(event)
+	}
+}
+
 func Prefix(fix string) prefix { return prefix{fix} }
 
 func (fix prefix) Cmd(name string) filter {

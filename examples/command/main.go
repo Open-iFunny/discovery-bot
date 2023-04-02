@@ -6,7 +6,6 @@ import (
 
 	"github.com/gastrodon/popplio/bot"
 	"github.com/gastrodon/popplio/ifunny"
-	"github.com/gastrodon/popplio/ifunny/compose"
 )
 
 var bearer = os.Getenv("IFUNNY_BEARER")
@@ -24,7 +23,18 @@ func main() {
 		return nil
 	})
 
-	us, _ := robot.Client.GetUser(compose.UserByNick("gastrodon"))
-	robot.Subscribe(robot.Client.DMChannelName(us.ID))
+	robot.On(prefix.Cmd("ping").Not(bot.AuthoredBy("gastrodon")), func(event *ifunny.ChatEvent) error {
+		fmt.Printf("we got a ping from somebody else\n")
+		return nil
+	})
+
+	robot.Chat.OnChannelUpdate(func(eventType int, channel *ifunny.ChatChannel) error {
+		if eventType == ifunny.EVENT_JOIN {
+			robot.Subscribe(channel.Name)
+		}
+
+		return nil
+	})
+
 	robot.Listen()
 }
