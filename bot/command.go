@@ -38,11 +38,18 @@ func (fix prefix) Cmd(name string) filter {
 			return false, err
 		}
 
-		if event.Text != "" {
-			return event.Text == fix.prefix+name || strings.HasPrefix(event.Text, fix.prefix+name+" "), nil
+		return event.Text == fix.prefix+name || strings.HasPrefix(event.Text, fix.prefix+name+" "), nil
+	}
+}
+
+func (fix prefix) Any() filter {
+	return func(ctx Context) (bool, error) {
+		event, err := ctx.Event()
+		if err != nil {
+			return false, err
 		}
 
-		return false, nil
+		return strings.HasPrefix(event.Text, fix.prefix), nil
 	}
 }
 
