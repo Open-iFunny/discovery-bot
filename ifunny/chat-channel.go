@@ -2,6 +2,7 @@ package ifunny
 
 import (
 	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/sirupsen/logrus"
 )
 
 type ChatChannel struct {
@@ -24,34 +25,47 @@ type ChatChannel struct {
 	} `json:"user"`
 }
 
-func (chat *Chat) handleChannelsRaw(handle func(channel *ChatChannel) error) EventHandler {
+func (chat *Chat) handleChannelsRaw(handle func(eventType int, channel *ChatChannel) error) EventHandler {
 	return func(eventType int, kwargs map[string]interface{}) error {
-		for _, channelRaw := range kwargs["chats"].([]interface{}) {
-			if kwargs["chats"] == nil {
-				chat.client.log.Warn("chats chunk is nil, skipping handler")
-				return nil
-			}
+		log := chat.client.log.WithFields(logrus.Fields{"event_type": eventType, "kwargs": kwargs})
 
-			channel := new(ChatChannel)
-			if err := JSONDecode(channelRaw, channel); err != nil {
+		switch eventType {
+		case EVENT_JOIN, EVENT_INVITED:
+			log.Trace("handle channel joined")
+
+			for _, channelRaw := range kwargs["chats"].([]interface{}) {
+				channel := new(ChatChannel)
+				if err := JSONDecode(channelRaw, channel); err != nil {
+					return err
+				}
+
+				if err := handle(eventType, channel); err != nil {
+					return err
+				}
+			}
+		case EVENT_EXIT:
+			log.Trace("handle channel exit")
+
+			name := ""
+			if err := JSONDecode(kwargs["chat_name"], &name); err != nil {
 				return err
 			}
 
-			if err := handle(channel); err != nil {
-				return err
-			}
+			return handle(eventType, &ChatChannel{Name: name})
+		default:
+			log.Warn("no handler for this type")
 		}
 
 		return nil
 	}
 }
 
-func (chat *Chat) OnChannelJoin(handle func(channel *ChatChannel) error) (func(), error) {
+func (chat *Chat) OnChannelUpdate(handle func(eventType int, channel *ChatChannel) error) (func(), error) {
 	return chat.Subscribe(compose.JoinedChannels(chat.client.Self.ID), chat.handleChannelsRaw(handle))
 }
 
-func (chat *Chat) OnChannelInvite(handle func(channel *ChatChannel) error) (func(), error) {
-	return chat.Subscribe(compose.PendingInvites(chat.client.Self.ID), chat.handleChannelsRaw(handle))
+func (chat *Chat) OnChannelInvite(handle func(eventType int, channel *ChatChannel) error) (func(), error) {
+	return chat.Subscribe(compose.ReceiveInvite(chat.client.Self.ID), chat.handleChannelsRaw(handle))
 }
 
 func (client *Client) GetChannels(desc compose.Request) ([]*ChatChannel, error) {
