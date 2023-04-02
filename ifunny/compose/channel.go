@@ -19,6 +19,7 @@ type ChannelJoinState int
 
 const (
 	NotJoined ChannelJoinState = 0
+	Invited   ChannelJoinState = 1
 	Joined    ChannelJoinState = 2
 )
 
