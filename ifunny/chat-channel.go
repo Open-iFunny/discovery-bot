@@ -10,10 +10,10 @@ type ChatChannel struct {
 	MembersOnline int    `json:"members_online"`
 	MembersTotal  int    `json:"members_total"`
 
-	Type      int   `json:"type"`       // 1 = dm, ??
-	JoinState int   `json:"join_state"` // 2 = true, ???
-	Role      int   `json:"role"`
-	TouchDT   int64 `json:"touch_dt"` // maybe when we last were online ??
+	Type      compose.ChannelType      `json:"type"`       // 1 = dm, ??
+	JoinState compose.ChannelJoinState `json:"join_state"` // 2 = true, ???
+	Role      compose.ChannelRole      `json:"role"`
+	TouchDT   int64                    `json:"touch_dt"` // maybe when we last were online ??
 
 	User struct {
 		ID         string `json:"id"`

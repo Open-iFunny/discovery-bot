@@ -7,12 +7,26 @@ import (
 	"github.com/jcelliott/turnpike"
 )
 
-type channelType int
+type ChannelType int
 
 const (
-	ChannelDM      channelType = 1
-	ChannelPrivate channelType = 2
-	ChannelPublic  channelType = 3
+	ChannelDM      ChannelType = 1
+	ChannelPrivate ChannelType = 2
+	ChannelPublic  ChannelType = 3
+)
+
+type ChannelJoinState int
+
+const (
+	NotJoined ChannelJoinState = 0
+	Joined    ChannelJoinState = 2
+)
+
+type ChannelRole int
+
+const (
+	RoleDM     ChannelRole = 0 // ?
+	RoleNormie ChannelRole = 2 // ???
 )
 
 func PendingInvites(id string) turnpike.Subscribe {
@@ -53,7 +67,7 @@ func GetDMChannel(id string, them ...string) turnpike.Call {
 	}
 }
 
-func NewChannel(title, name, description string, invite []string, channelType channelType) turnpike.Call {
+func NewChannel(title, name, description string, invite []string, channelType ChannelType) turnpike.Call {
 	if description != "" && channelType == ChannelPrivate {
 		panic("cannot add a description to a private channel")
 	}
@@ -73,6 +87,13 @@ func NewChannel(title, name, description string, invite []string, channelType ch
 func GetChannel(channel string) turnpike.Call {
 	return turnpike.Call{
 		Procedure:   URI("get_chat"),
+		ArgumentsKw: map[string]interface{}{"chat_name": channel},
+	}
+}
+
+func JoinChannel(channel string) turnpike.Call {
+	return turnpike.Call{
+		Procedure:   URI("join_chat"),
 		ArgumentsKw: map[string]interface{}{"chat_name": channel},
 	}
 }
