@@ -95,6 +95,33 @@ func (client *Client) GetChannelsPage(desc compose.Request) (*ChatChannelPage, e
 	return &output.Data, err
 }
 
+func (client *Client) IterChannels(desc compose.Request) <-chan *ChatChannel {
+	output := make(chan *ChatChannel)
+
+	go func() {
+		for {
+			page, err := client.GetChannelsPage(desc)
+			if err != nil {
+				panic(err)
+			}
+
+			for _, channel := range page.Channels.Items {
+				output <- channel
+			}
+
+			if !page.Channels.Paging.HasNext {
+				break
+			}
+
+			desc.Query.Set("next", page.Channels.Paging.Cursors.Next)
+		}
+
+		close(output)
+	}()
+
+	return output
+}
+
 func (client *Client) DMChannelName(them ...string) string {
 	return compose.DMChannelName(client.Self.ID, them)
 }
