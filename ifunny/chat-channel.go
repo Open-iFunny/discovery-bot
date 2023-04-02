@@ -6,13 +6,13 @@ import (
 )
 
 type ChatChannel struct {
-	Name          string `json:"name"` // I think this is the unique id
+	Name          string `json:"name"`
 	Title         string `json:"title"`
 	MembersOnline int    `json:"members_online"`
 	MembersTotal  int    `json:"members_total"`
 
-	Type      compose.ChannelType      `json:"type"`       // 1 = dm, ??
-	JoinState compose.ChannelJoinState `json:"join_state"` // 2 = true, ???
+	Type      compose.ChannelType      `json:"type"`
+	JoinState compose.ChannelJoinState `json:"join_state"`
 	Role      compose.ChannelRole      `json:"role"`
 	TouchDT   int64                    `json:"touch_dt"` // maybe when we last were online ??
 
