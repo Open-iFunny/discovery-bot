@@ -16,3 +16,7 @@ func Invite(channel string, accept bool) turnpike.Call {
 		ArgumentsKw: map[string]interface{}{"chat_name": channel},
 	}
 }
+
+func ReceiveInvite(id string) turnpike.Subscribe {
+	return turnpike.Subscribe{Topic: URI("user." + id + ".invites")}
+}
