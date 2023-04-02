@@ -37,3 +37,8 @@ func Next(value int64) Page { return Page{NEXT, value} }
 func get(path string, query url.Values) Request {
 	return Request{Method: "GET", Path: path, Query: query}
 }
+
+type SPage struct {
+	Key   pageDirection
+	Value string
+}

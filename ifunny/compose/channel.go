@@ -1,7 +1,9 @@
 package compose
 
 import (
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/jcelliott/turnpike"
@@ -98,3 +100,14 @@ func JoinChannel(channel string) turnpike.Call {
 var (
 	ChatsTrending = Request{Method: "GET", Path: "/chats/trending"}
 )
+
+func ChatsQuery(query string, limit int, page SPage) Request {
+	return Request{
+		Method: "GET", Path: "/chats/open_channels",
+		Query: url.Values{
+			"q":              []string{query},
+			"limit":          []string{strconv.Itoa(limit)},
+			string(page.Key): []string{page.Value},
+		},
+	}
+}

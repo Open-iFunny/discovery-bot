@@ -25,6 +25,14 @@ type ChatChannel struct {
 	} `json:"user"`
 }
 
+type ChatChannelPage struct {
+	Channels struct {
+		Items  []*ChatChannel `json:"items"`
+		Paging APIPaging      `json:"paging"`
+	} `json:"channels"`
+	Num int `json:"num"`
+}
+
 func (chat *Chat) handleChannelsRaw(handle func(eventType int, channel *ChatChannel) error) EventHandler {
 	return func(eventType int, kwargs map[string]interface{}) error {
 		log := chat.client.log.WithFields(logrus.Fields{"event_type": eventType, "kwargs": kwargs})
@@ -77,6 +85,14 @@ func (client *Client) GetChannels(desc compose.Request) ([]*ChatChannel, error) 
 
 	err := client.RequestJSON(desc, output)
 	return output.Data.Channels, err
+}
+
+func (client *Client) GetChannelsPage(desc compose.Request) (*ChatChannelPage, error) {
+	output := new(struct {
+		Data ChatChannelPage `json:"data"`
+	})
+	err := client.RequestJSON(desc, output)
+	return &output.Data, err
 }
 
 func (client *Client) DMChannelName(them ...string) string {
