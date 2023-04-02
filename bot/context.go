@@ -6,9 +6,11 @@ import (
 )
 
 type Context interface {
+	Robot() *Bot
 	Event() (*ifunny.ChatEvent, error)
 	Caller() (*ifunny.User, error)
 	Channel() (*ifunny.ChatChannel, error)
+	Send(message string) error
 }
 
 type eventContext struct {
@@ -18,6 +20,10 @@ type eventContext struct {
 
 	caller  *ifunny.User
 	channel *ifunny.ChatChannel
+}
+
+func (ctx *eventContext) Robot() *Bot {
+	return ctx.robot
 }
 
 func (ctx *eventContext) Event() (*ifunny.ChatEvent, error) {
@@ -55,6 +61,10 @@ func (ctx *eventContext) Channel() (*ifunny.ChatChannel, error) {
 	}
 
 	return channel, nil
+}
+
+func (ctx *eventContext) Send(message string) error {
+	return ctx.robot.Chat.Publish(compose.MessageTo(ctx.channelName, message))
 }
 
 func (bot *Bot) makeCtx(channel string, event *ifunny.ChatEvent) (Context, error) {
