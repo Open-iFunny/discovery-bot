@@ -15,7 +15,7 @@ type filtHandler struct {
 type Bot struct {
 	Client *ifunny.Client
 	Chat   *ifunny.Chat
-	log    *logrus.Logger
+	Log    *logrus.Logger
 
 	recvEvents   chan *ifunny.ChatEvent
 	unsubEvents  map[string]func()
@@ -39,7 +39,7 @@ func MakeBot(bearer, userAgent string) (*Bot, error) {
 	return &Bot{
 		Client:       client,
 		Chat:         chat,
-		log:          log,
+		Log:          log,
 		recvEvents:   make(chan *ifunny.ChatEvent),
 		unsubEvents:  make(map[string]func()),
 		handleEvents: make(map[string]filtHandler, 0),
@@ -47,7 +47,7 @@ func MakeBot(bearer, userAgent string) (*Bot, error) {
 }
 
 func (bot *Bot) Subscribe(channel string) {
-	log := bot.log.WithFields(logrus.Fields{"trace_id": uuid.New().String(), "channel_name": channel})
+	log := bot.Log.WithFields(logrus.Fields{"trace_id": uuid.New().String(), "channel_name": channel})
 	if unsub, ok := bot.unsubEvents[channel]; ok {
 		log.Warn("SubscribeChat on subscribed channel")
 		unsub()
@@ -77,7 +77,7 @@ func (bot *Bot) Subscribe(channel string) {
 }
 
 func (bot *Bot) Unsubscribe(channel string) {
-	log := bot.log.WithFields(logrus.Fields{"trace_id": uuid.New().String(), "channel_name": channel})
+	log := bot.Log.WithFields(logrus.Fields{"trace_id": uuid.New().String(), "channel_name": channel})
 	if unsub, ok := bot.unsubEvents[channel]; !ok {
 		log.Warn("UnsubscribeChat on not subscribed channel")
 	} else {

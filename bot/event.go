@@ -10,7 +10,7 @@ type handler func(event *ifunny.ChatEvent) error
 
 func (bot *Bot) On(filter filter, handle handler) func() {
 	handleID := uuid.New().String()
-	log := bot.log.WithField("handle_id", handleID)
+	log := bot.Log.WithField("handle_id", handleID)
 
 	log.Trace("register on")
 	bot.handleEvents[handleID] = filtHandler{filter, handle}
@@ -28,7 +28,7 @@ func (bot *Bot) OnMessage(handle handler) func() {
 }
 
 func (bot *Bot) Listen() {
-	log := bot.log.WithField("trace_id", uuid.NewString())
+	log := bot.Log.WithField("trace_id", uuid.NewString())
 	log.Trace("start event listening")
 
 	for event := range bot.recvEvents {
