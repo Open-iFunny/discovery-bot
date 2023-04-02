@@ -15,7 +15,7 @@ const (
 	apiRoot   = "https://api.ifunny.mobi/v4"
 	projectID = "iFunny"
 
-	LogLevel = logrus.TraceLevel
+	LogLevel = logrus.InfoLevel
 )
 
 func MakeClient(bearer, userAgent string) (*Client, error) {
