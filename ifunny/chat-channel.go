@@ -2,6 +2,7 @@ package ifunny
 
 import (
 	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/jcelliott/turnpike"
 	"github.com/sirupsen/logrus"
 )
 
@@ -74,6 +75,15 @@ func (chat *Chat) OnChannelUpdate(handle func(eventType int, channel *ChatChanne
 
 func (chat *Chat) OnChannelInvite(handle func(eventType int, channel *ChatChannel) error) (func(), error) {
 	return chat.Subscribe(compose.ReceiveInvite(chat.client.Self.ID), chat.handleChannelsRaw(handle))
+}
+
+func (chat *Chat) GetChannel(call turnpike.Call) (*ChatChannel, error) {
+	output := new(struct {
+		Chat *ChatChannel `json:"chat"`
+	})
+
+	err := chat.Call(call, output)
+	return output.Chat, err
 }
 
 func (client *Client) GetChannels(desc compose.Request) ([]*ChatChannel, error) {
