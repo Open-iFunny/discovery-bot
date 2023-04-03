@@ -67,6 +67,11 @@ func (chat *Chat) IterMessages(desc turnpike.Call) <-chan *ChatEvent {
 			panic(err) // shrug emoji
 		}
 
+		if len(buffer) == 0 {
+			close(output)
+			return
+		}
+
 		for _, event := range buffer {
 			output <- event
 		}
