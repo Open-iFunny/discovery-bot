@@ -1,8 +1,6 @@
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/gastrodon/turnpike v0.0.0-20230326185403-bc3169609b43 h1:/BStO/55y8NANmxgCz6vMSFg0oa8uwIQHIyvRIi/0k4=
-github.com/gastrodon/turnpike v0.0.0-20230326185403-bc3169609b43/go.mod h1:Awtmr4/Gy1p2P1PIVdO7cf3QiafNxVy5vpTAsqrkjKY=
 github.com/gastrodon/turnpike v1.1.0 h1:BWKVeUFruClO7Oh4Un3bGk2O8RySgaXWWy4ZkB7CSrI=
 github.com/gastrodon/turnpike v1.1.0/go.mod h1:Awtmr4/Gy1p2P1PIVdO7cf3QiafNxVy5vpTAsqrkjKY=
 github.com/go-sql-driver/mysql v1.7.0 h1:ueSltNNllEqE3qcWBTD0iQd3IpL/6U+mJxLkazJ7YPc=
