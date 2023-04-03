@@ -8,3 +8,12 @@ services:
 
     ports:
       - 3306:3306
+
+  looker:
+    image: gastrodon/looker
+    build: .
+
+    environment:
+      IFUNNY_BEARER: "${IFUNNY_BEARER}"
+      IFUNNY_ADMIN_ID: "${IFUNNY_ADMIN_ID}"
+      IFUNNY_STATS_CONNECTION: root:root@tcp(mariadb:3306)/stats
