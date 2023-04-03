@@ -72,7 +72,7 @@ func onChannelInvite(robot *bot.Bot) error {
 var histChan = make(chan string)
 var registers = [...]func(*bot.Bot) error{
 	onChannelUpdate, onChannelInvite,
-	// collectSeq(10*time.Minute, histChan),
+	collectSeq(25*time.Millisecond, histChan),
 	onCommand,
 }
 
@@ -92,29 +92,35 @@ func main() {
 	for _, reg := range registers {
 		go func(reg func(*bot.Bot) error) {
 			if err := reg(robot); err != nil {
-				panic(err)
+				robot.Log.Error("error: " + err.Error())
 			}
 		}(reg)
 	}
 
-	if handle, err := dbSetup(); err != nil {
-		panic(err)
-	} else {
-		go func() {
-			if err := histSeq(0*time.Nanosecond, histChan)(handle, robot); err != nil {
-				panic(err)
-			}
-		}()
-	}
-
 	for _, ticker := range tickers {
 		go func(tRobot *bot.Bot, interval time.Duration, call func(*bot.Bot) error) {
-			for range time.Tick(interval) {
+			for {
 				if err := call(tRobot); err != nil {
 					panic(err)
 				}
+
+				<-time.Tick(interval)
 			}
 		}(robot, ticker.interval, ticker.tick)
+	}
+
+	handle, err := dbSetup(robot.Log)
+	if err != nil {
+		panic(err)
+	}
+
+	for i := 0; i != 15; i++ {
+		go func() {
+			if err := histSeq(1500*time.Millisecond, histChan)(robot, handle); err != nil {
+				panic(err)
+			}
+			<-time.After(100 * time.Millisecond)
+		}()
 	}
 
 	if err := robot.Listen(); err != nil {

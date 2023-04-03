@@ -10,13 +10,13 @@ import (
 	"github.com/gastrodon/popplio/ifunny"
 	"github.com/gastrodon/popplio/ifunny/compose"
 	"github.com/sirupsen/logrus"
+
+	"github.com/go-sql-driver/mysql"
 )
 
 const (
 	tMessageSnap      = "message_snap"
 	tMessageSnapPlace = "message_snap_place"
-
-	nothing = 0 * time.Nanosecond
 )
 
 var tableDesc = [...][2]string{
@@ -38,7 +38,13 @@ var tableDesc = [...][2]string{
 }
 var connect = os.Getenv("IFUNNY_STATS_CONNECTION")
 
-func dbSetup() (*sql.DB, error) {
+type dblog struct{ logger *logrus.Logger }
+
+func (log *dblog) Print(v ...interface{}) {
+	log.logger.Trace(v...)
+}
+
+func dbSetup(logger *logrus.Logger) (*sql.DB, error) {
 	handle, err := sql.Open("mysql", connect)
 	if err != nil {
 		return nil, err
@@ -54,33 +60,54 @@ func dbSetup() (*sql.DB, error) {
 		}
 	}
 
+	mysql.SetLogger(&dblog{logger})
+	handle.SetConnMaxLifetime(1 * time.Second)
+	handle.SetMaxOpenConns(8)
+	handle.SetMaxIdleConns(8)
 	return handle, nil
 }
 
 func histSetPlace(handle *sql.DB, channel string, page int64, head string, finished bool) error {
-	_, err := handle.Query("REPLACE INTO message_snap_place(channel, page, head, finished) VALUES (?, ?, ?, ?)", channel, page, head, finished)
+	tx, err := handle.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+	stmt, err := tx.Prepare("REPLACE INTO message_snap_place(channel, page, head, finished) VALUES (?, ?, ?, ?) LIMIT 1")
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+	_, err = stmt.Exec(channel, page, head, finished)
 	return err
 }
 
 func histGetPlace(handle *sql.DB, channel string) (int64, string, bool, error) {
-	result, err := handle.Query("SELECT page, head, finished FROM message_snap_place WHERE channel = ?", channel)
-	if err != nil {
-		return 0, "", false, err
-	}
-
-	if !result.Next() {
-		fmt.Println("no results, not done")
-		return 0, "", false, nil
-	}
-
 	page, head, finished := int64(0), "", false
-	err = result.Scan(&page, &head, &finished)
+	tx, err := handle.Begin()
+	if err != nil {
+		return page, head, finished, err
+	}
 
-	fmt.Println("query results", page, head, finished, err)
+	defer tx.Rollback()
+	stmt, err := tx.Prepare("SELECT page, head, finished FROM message_snap_place WHERE channel = ? LIMIT 1")
+	if err != nil {
+		return page, head, finished, err
+	}
+
+	defer stmt.Close()
+	result, err := stmt.Query(channel)
+	if err != nil || !result.Next() {
+		return page, head, finished, err
+	}
+
+	err = result.Scan(&page, &head, &finished)
 	return page, head, finished, err
 }
 
-func histWrite(handle *sql.DB, buffer []*ifunny.ChatEvent, channel string) error {
+func histWrite(handle *sql.DB, head *ifunny.ChatEvent, buffer []*ifunny.ChatEvent, channel string) error {
 	tx, err := handle.Begin()
 	if err != nil {
 		return err
@@ -94,78 +121,87 @@ func histWrite(handle *sql.DB, buffer []*ifunny.ChatEvent, channel string) error
 
 	defer stmt.Close()
 	for _, event := range buffer {
+		if event == nil {
+			break
+		}
+
 		if _, err := stmt.Exec(event.ID, channel, event.User.Nick, int(event.PubAt), event.Text); err != nil {
 			return err
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return histSetPlace(handle, channel, int64(head.PubAt), head.ID, false)
 }
 
-func histSeq(rate time.Duration, channels <-chan string) func(handle *sql.DB, robot *bot.Bot) error {
-	return func(handle *sql.DB, robot *bot.Bot) error {
-		for name := range channels {
-			log := robot.Log.WithFields(logrus.Fields{"channel": name})
-			log.Info("hist seq GO")
+func doHistSeq(handle *sql.DB, channel string, robot *bot.Bot) error {
+	log := robot.Log.WithFields(logrus.Fields{"channel": channel})
+	pageIndex, _, finished, err := histGetPlace(handle, channel)
+	if err != nil || finished {
+		return err
+	}
 
-			pageIndex, _, finished, err := histGetPlace(handle, name)
-			if err != nil {
-				log.Error(err)
+	page := compose.NoPage()
+	if pageIndex != 0.0 {
+		page = compose.Next(pageIndex)
+	}
+
+	index, bufLimit := 0, 2500
+	buffer := make([]*ifunny.ChatEvent, bufLimit)
+	iterEvent := robot.Chat.IterMessages(compose.ListMessages(channel, 100, page))
+	for event := range iterEvent {
+		if event == nil {
+			log.Trace("iter end")
+			goto flush
+		}
+
+		if event.Type != ifunny.TEXT_MESSAGE {
+			continue
+		}
+
+		if index == bufLimit {
+			log.Info("writing buffer")
+			if err := histWrite(handle, event, buffer[:index], channel); err != nil {
 				return err
 			}
 
-			if finished {
-				log.Info("hist seq already done")
-				continue
+			index = 0
+			buffer = make([]*ifunny.ChatEvent, bufLimit)
+		}
+
+		buffer[index] = event
+		index++
+	}
+
+flush:
+	if index != 0 {
+		log.Info("flushing buffer")
+		if err := histWrite(handle, buffer[index-1], buffer[:index], channel); err != nil {
+			return err
+		}
+	}
+
+	log.Info("marking complete")
+	if err := histSetPlace(handle, channel, 0.0, "", true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func histSeq(rate time.Duration, channels <-chan string) func(robot *bot.Bot, handle *sql.DB) error {
+	return func(robot *bot.Bot, handle *sql.DB) error {
+		for channel := range channels {
+			robot.Log.WithField("channel", channel).Info("hist seq GO")
+			if err := doHistSeq(handle, channel, robot); err != nil {
+				return err
 			}
 
-			page := compose.NoPage()
-			if pageIndex != 0.0 {
-				page = compose.Next(pageIndex)
-			}
-
-			index, bufLimit := 0, 10_000
-			buffer := make([]*ifunny.ChatEvent, bufLimit)
-			for event := range robot.Chat.IterMessages(compose.ListMessages(name, 100, page)) {
-				if index == bufLimit {
-					log.Trace("writing buffer")
-
-					if err := histWrite(handle, buffer, name); err != nil {
-						log.Error("err writing buffer: " + err.Error())
-						return err
-					}
-
-					if err := histSetPlace(handle, name, int64(event.PubAt), event.ID, false); err != nil {
-						log.Error("err writing place: " + err.Error())
-						return err
-					}
-
-					index = 0
-					buffer = make([]*ifunny.ChatEvent, bufLimit)
-				}
-
-				buffer[index] = event
-				index++
-				if rate != nothing {
-					<-time.Tick(rate)
-				}
-			}
-
-			if index != 0 {
-				log.Trace("writing final buffer")
-
-				if err := histWrite(handle, buffer[:index], name); err != nil {
-					log.Error("err writing buffer: " + err.Error())
-					return err
-				}
-
-				if err := histSetPlace(handle, name, 0.0, "", true); err != nil {
-					log.Error("err writing place: " + err.Error())
-					return err
-				}
-			}
-
-			log.Info("hist seq OK")
+			robot.Log.WithField("channel", channel).Info("hist seq OK")
+			<-time.After(rate)
 		}
 
 		return nil
