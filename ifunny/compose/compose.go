@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/url"
 
-	"github.com/jcelliott/turnpike"
+	"github.com/gastrodon/turnpike"
 )
 
 const chatNamespace = "co.fun.chat"

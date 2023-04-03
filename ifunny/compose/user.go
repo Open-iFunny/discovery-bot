@@ -1,6 +1,6 @@
 package compose
 
-import "github.com/jcelliott/turnpike"
+import "github.com/gastrodon/turnpike"
 
 /*
 call out to get chat contacts
