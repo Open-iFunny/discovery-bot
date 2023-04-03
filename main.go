@@ -13,26 +13,6 @@ import (
 var bearer = os.Getenv("IFUNNY_BEARER")
 var userAgent = os.Getenv("IFUNNY_USER_AGENT")
 
-func joinTrending(robot *bot.Bot) error {
-	channels, err := robot.Client.GetChannels(compose.ChatsTrending)
-	if err != nil {
-		return err
-	}
-
-	for _, channel := range channels {
-		if channel.MembersTotal == 500 || channel.JoinState == compose.Joined {
-			fmt.Printf("skipping %s\n", channel.Name)
-			continue
-		}
-
-		if err := robot.Chat.Call(compose.JoinChannel(channel.Name), nil); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func onChannelUpdate(robot *bot.Bot) error {
 	for {
 		robot.Log.Trace("refresh channls subscribe")
@@ -80,7 +60,7 @@ var tickers = [...]struct {
 	interval time.Duration
 	tick     func(*bot.Bot) error
 }{
-	{1 * time.Hour, joinTrending},
+	{1 * time.Hour, collectTrending(10*time.Second, histChan)},
 }
 
 func main() {
