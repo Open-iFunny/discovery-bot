@@ -2,7 +2,7 @@ package ifunny
 
 import (
 	"github.com/gastrodon/popplio/ifunny/compose"
-	"github.com/jcelliott/turnpike"
+	"github.com/gastrodon/turnpike"
 )
 
 const (

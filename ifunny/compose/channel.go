@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jcelliott/turnpike"
+	"github.com/gastrodon/turnpike"
 )
 
 type ChannelType int

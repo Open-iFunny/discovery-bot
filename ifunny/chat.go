@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/gastrodon/turnpike"
 	"github.com/google/uuid"
-	"github.com/jcelliott/turnpike"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 )

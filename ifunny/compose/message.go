@@ -1,7 +1,7 @@
 package compose
 
 import (
-	"github.com/jcelliott/turnpike"
+	"github.com/gastrodon/turnpike"
 )
 
 /*
