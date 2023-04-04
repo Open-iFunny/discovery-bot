@@ -48,6 +48,7 @@ var tableDesc = [...][2]string{
 	{
 		tChannelSeqPlace,
 		`place CHAR(8) NOT NULL,
+		finished BOOL NOT NULL DEFAULT FALSE,
 		thread_lock INT UNIQUE PRIMARY KEY NOT NULL`,
 	},
 }
