@@ -13,32 +13,33 @@ import (
 )
 
 const (
-	tMessageSnap      = "message_snap"
-	tMessageContent   = "message_content"
-	tMessageSnapPlace = "message_snap_place"
-	tChannelSnap      = "channel_snap"
-	tChannelSeqPlace  = "channel_seq_place"
+	tEventSnap       = "event_snap"
+	tEventSnapPlace  = "event_snap_place"
+	tMessageContent  = "event_message_content"
+	tChannelSnap     = "channel_snap"
+	tChannelSeqPlace = "channel_seq_place"
 )
 
 var tableDesc = [...][2]string{
 	{
-		tMessageSnap,
+		tEventSnap,
 		`id CHAR(32) UNIQUE PRIMARY KEY NOT NULL,
+		event_type INT NOT NULL,
 		channel CHAR(128) NOT NULL,
 		author CHAR(32) NOT NULL,
 		published BIGINT NOT NULL`,
 	},
 	{
-		tMessageContent,
-		`id CHAR(32) UNIQUE PRIMARY KEY NOT NULL,
-		content VARCHAR(1024) NOT NULL`,
-	},
-	{
-		tMessageSnapPlace,
+		tEventSnapPlace,
 		`channel CHAR(128) UNIQUE PRIMARY KEY NOT NULL,
 		page BIGINT NOT NULL,
 		head CHAR(32) NOT NULL,
 		finished BOOL NOT NULL DEFAULT FALSE`,
+	},
+	{
+		tMessageContent,
+		`id CHAR(32) UNIQUE PRIMARY KEY NOT NULL,
+		content VARCHAR(1024) NOT NULL`,
 	},
 	{
 		tChannelSnap,
@@ -118,4 +119,26 @@ func query(handle *sql.DB, query string, args []any, output ...interface{}) erro
 
 	defer result.Close()
 	return result.Scan(output...)
+}
+
+func insert(handle *sql.DB, query string, data [][]any) error {
+	tx, err := handle.Begin()
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+	for _, dataRow := range data {
+		if _, err := stmt.Exec(dataRow...); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
