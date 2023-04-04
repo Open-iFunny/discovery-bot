@@ -16,9 +16,10 @@ func collectEventHist(rate time.Duration, channels <-chan string, events chan<- 
 				for channel := range channels {
 					log := robot.Log.WithField("channel", channel)
 
-					log.Info("iter history")
+					log.Trace("iter history")
 					for event := range robot.Chat.IterMessages(compose.ListMessages(channel, 100, compose.NoPage())) {
 						log.WithField("message_id", event.ID).Trace("enqueue event")
+						event.Channel = channel
 						events <- event
 					}
 				}
