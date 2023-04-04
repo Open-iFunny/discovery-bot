@@ -10,14 +10,13 @@ import (
 
 	"github.com/gastrodon/popplio/bot"
 	"github.com/gastrodon/popplio/ifunny/compose"
-	"github.com/sirupsen/logrus"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 var okID = os.Getenv("IFUNNY_ADMIN_ID")
 
-func doHistSnapshot(channels chan<- string) func(ctx bot.Context) error {
+func cmdHistSnapshot(channels chan<- string) func(ctx bot.Context) error {
 	return func(ctx bot.Context) error {
 		event, err := ctx.Event()
 		if err != nil {
@@ -44,22 +43,17 @@ func doHistSnapshot(channels chan<- string) func(ctx bot.Context) error {
 	}
 }
 
+func cmdUptime(start time.Time) func(bot.Context) error {
+	return func(ctx bot.Context) error {
+		return ctx.Send(fmt.Sprintf("Up for %d hours", int(math.Floor(time.Since(start).Hours()))))
+	}
+}
+
 func onCommand(_ *sql.DB, robot *bot.Bot) error {
 	byID := bot.AuthoredBy(okID)
 	prefix := bot.Prefix(".")
-
-	startTime := time.Now()
-	robot.On(prefix.Cmd("uptime").And(byID), func(ctx bot.Context) error {
-		event, err := ctx.Event()
-		if err != nil {
-			return err
-		}
-
-		robot.Log.WithFields(logrus.Fields{"cmd": "uptime", "caller": event.User.Nick}).Trace("call")
-		return ctx.Send(fmt.Sprintf("Up for %d hours", int(math.Floor(time.Since(startTime).Hours()))))
-	})
-
-	robot.On(prefix.Cmd("snap").And(byID), doHistSnapshot(collectChannel))
+	robot.On(prefix.Cmd("uptime").And(byID), cmdUptime(time.Now()))
+	robot.On(prefix.Cmd("snap").And(byID), cmdHistSnapshot(collectChannel))
 
 	return nil
 }
