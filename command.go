@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"math"
 	"os"
@@ -43,7 +44,7 @@ func doHistSnapshot(channels chan<- string) func(ctx bot.Context) error {
 	}
 }
 
-func onCommand(robot *bot.Bot) error {
+func onCommand(_ *sql.DB, robot *bot.Bot) error {
 	byID := bot.AuthoredBy(okID)
 	prefix := bot.Prefix(".")
 

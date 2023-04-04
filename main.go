@@ -1,8 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/gastrodon/popplio/bot"
@@ -13,7 +15,7 @@ import (
 var bearer = os.Getenv("IFUNNY_BEARER")
 var userAgent = os.Getenv("IFUNNY_USER_AGENT")
 
-func onChannelUpdate(robot *bot.Bot) error {
+func onChannelUpdate(_ *sql.DB, robot *bot.Bot) error {
 	for {
 		robot.Log.Trace("refresh channls subscribe")
 		unsub, err := robot.Chat.OnChannelUpdate(func(eventType int, channel *ifunny.ChatChannel) error {
@@ -36,12 +38,12 @@ func onChannelUpdate(robot *bot.Bot) error {
 			return err
 		}
 
-		<-time.Tick(15 * time.Second)
+		<-time.Tick(15 * time.Minute)
 		unsub()
 	}
 }
 
-func onChannelInvite(robot *bot.Bot) error {
+func onChannelInvite(_ *sql.DB, robot *bot.Bot) error {
 	_, err := robot.Chat.OnChannelInvite(func(eventType int, channel *ifunny.ChatChannel) error {
 		return robot.Chat.Call(compose.Invite(channel.Name, true), nil)
 	})
@@ -50,60 +52,70 @@ func onChannelInvite(robot *bot.Bot) error {
 }
 
 var histChan = make(chan string)
-var registers = [...]func(*bot.Bot) error{
-	onChannelUpdate, onChannelInvite,
-	collectSeq(25*time.Millisecond, histChan),
-	onCommand,
+var forevers = [...]struct {
+	name string
+	call func(*sql.DB, *bot.Bot) error
+}{
+	{"onCommand", onCommand},
+	{"onChannelUpdate", onChannelUpdate},
+	{"onChannelInvite", onChannelInvite},
+	{"collectChannelSeq", collectChannelSeq(100*time.Millisecond, histChan, 0)},
 }
 
 var tickers = [...]struct {
+	name     string
 	interval time.Duration
-	tick     func(*bot.Bot) error
+	tick     func(*sql.DB, *bot.Bot) error
 }{
-	{1 * time.Hour, collectTrending(10*time.Second, histChan)},
+	{"collect-channel-trending", 1 * time.Hour, collectChannelTrending(100*time.Millisecond, histChan)},
+}
+
+func init() {
+	runtime.GOMAXPROCS(1)
 }
 
 func main() {
 	robot, err := bot.MakeBot(bearer, userAgent)
 	if err != nil {
-		panic(err)
+		panic("error in makeBot: " + err.Error())
 	}
 
-	for _, reg := range registers {
-		go func(reg func(*bot.Bot) error) {
-			if err := reg(robot); err != nil {
-				robot.Log.Error("error: " + err.Error())
+	handle, err := makeDB(robot.Log)
+	if err != nil {
+		panic("error in makeDB: " + err.Error())
+	}
+
+	for _, forever := range forevers {
+		go func(name string, f func(*sql.DB, *bot.Bot) error) {
+			robot.Log.Infof("call forever %s", name)
+
+			if err := f(handle, robot); err != nil {
+				panic(fmt.Sprintf("error in forever: %s: %s", name, err))
 			}
-		}(reg)
+		}(forever.name, forever.call)
 	}
 
 	for _, ticker := range tickers {
-		go func(tRobot *bot.Bot, interval time.Duration, call func(*bot.Bot) error) {
-			for {
-				if err := call(tRobot); err != nil {
-					panic(err)
+		go func(name string, interval time.Duration, call func(*sql.DB, *bot.Bot) error) {
+			for iter := 0; ; iter++ {
+				robot.Log.WithField("iter", iter).Infof("call ticker %s", name)
+
+				if err := call(handle, robot); err != nil {
+					panic(fmt.Sprintf("error in ticker[iter: %d]: %s: %s", iter, name, err))
 				}
 
 				<-time.Tick(interval)
 			}
-		}(robot, ticker.interval, ticker.tick)
+		}(ticker.name, ticker.interval, ticker.tick)
 	}
 
-	handle, err := dbSetup(robot.Log)
-	if err != nil {
-		panic(err)
-	}
-
-	for i := 0; i != 15; i++ {
-		go func() {
-			if err := histSeq(1500*time.Millisecond, histChan)(robot, handle); err != nil {
-				panic(err)
-			}
-			<-time.After(100 * time.Millisecond)
-		}()
-	}
+	go func() {
+		for {
+			fmt.Println(<-histChan)
+		}
+	}()
 
 	if err := robot.Listen(); err != nil {
-		panic(err)
+		panic(fmt.Sprintf("error in listen: %s", err))
 	}
 }
