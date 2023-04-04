@@ -124,22 +124,19 @@ func main() {
 		}(ticker.name, ticker.interval, ticker.tick)
 	}
 
-	go func() {
-		events := 0
-		ticker := time.Tick(1 * time.Second)
-
-		for {
-			select {
-			case <-collectEvent:
-				events++
-			case <-ticker:
-				fmt.Printf("%d/sec\n", events)
-				events = 0
-			}
+	for {
+		robot.Log.Info("listening")
+		if err := robot.Listen(); err != nil {
+			robot.Log.Errorf("error in listen: %s", err)
 		}
-	}()
 
-	if err := robot.Listen(); err != nil {
-		panic(fmt.Sprintf("error in listen: %s", err))
+		<-time.After(5 * time.Second)
+		robot.Log.Info("reconnecting")
+		chat, err := robot.Client.Chat()
+		if err != nil {
+			robot.Log.Errorf("err reconnecting: %s", err)
+		}
+
+		robot.Chat = chat
 	}
 }
