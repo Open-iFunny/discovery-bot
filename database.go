@@ -104,8 +104,11 @@ func query(handle *sql.DB, query string, args []any, output ...interface{}) erro
 
 	defer stmt.Close()
 	if len(output) == 0 {
-		_, err := stmt.Exec(args...)
-		return err
+		if _, err := stmt.Exec(args...); err != nil {
+			return err
+		}
+
+		return tx.Commit()
 	}
 
 	result, err := stmt.Query(args...)
