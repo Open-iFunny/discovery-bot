@@ -1,5 +1,25 @@
 services:
-  mariadb:
+  mariadb-scyther:
+    image: mariadb
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: scyther
+
+  scyther:
+    image: gastrodon/scyther
+    restart: unless-stopped
+
+    environment:
+      SCYTHER_CONNECTION: root:root@tcp(mariadb-scyther:3306)/scyther
+
+    ports:
+      - 8000:8000
+
+    depends_on:
+      - mariadb-scyther
+
+  mariadb-looker:
     image: mariadb
 
     environment:
@@ -16,4 +36,8 @@ services:
     environment:
       IFUNNY_BEARER: "${IFUNNY_BEARER}"
       IFUNNY_ADMIN_ID: "${IFUNNY_ADMIN_ID}"
-      IFUNNY_STATS_CONNECTION: root:root@tcp(mariadb:3306)/stats
+      IFUNNY_STATS_CONNECTION: root:root@tcp(mariadb-looker:3306)/stats
+      IFUNNY_STATS_QUEUE: http://scyther:8000
+
+    depends_on:
+      - mariadb-looker
