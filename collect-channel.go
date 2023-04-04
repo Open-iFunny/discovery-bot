@@ -12,33 +12,6 @@ import (
 
 const PLACE_INDEX = 1
 
-func query(handle *sql.DB, query string, args []any, output ...interface{}) error {
-	tx, err := handle.Begin()
-	if err != nil {
-		return err
-	}
-
-	defer tx.Rollback()
-	stmt, err := tx.Prepare(query)
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-	if len(output) == 0 {
-		_, err := stmt.Exec(args...)
-		return err
-	}
-
-	result, err := stmt.Query(args...)
-	if err != nil || !result.Next() {
-		return err
-	}
-
-	defer result.Close()
-	return result.Scan(output...)
-}
-
 var channelRunes = []rune("abcdefghijklmnopqrstuvwxyz1234567890_")
 
 func countPlacePart(part rune) (int, error) {
