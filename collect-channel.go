@@ -93,7 +93,7 @@ func collectChannelSeq(rate time.Duration, channels chan<- string, procs, lock i
 						return
 					}
 
-					log.Info("iter results")
+					log.Trace("iter results")
 					for channel := range robot.Client.IterChannels(compose.ChatsQuery(query, 100, compose.SPage{})) {
 						log.WithField("channel", channel.Name).Trace("enqueue channel")
 						channels <- channel.Name
