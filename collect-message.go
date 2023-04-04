@@ -57,16 +57,12 @@ func collectEventHist(rate time.Duration, channels <-chan string, events chan<- 
 const INSERT_CHUNK = 10_000
 
 func snapEvents(events <-chan *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.Bot) error {
-	insertSnap := func(handle *sql.DB, buffer [INSERT_CHUNK][]any, errs chan error) {
-		if err := insert(handle, "INSERT IGNORE INTO event_snap(id, event_type, channel, author, published) VALUES (?, ?, ?, ?, ?)", buffer); err != nil {
-			errs <- err
-		}
+	insertSnap := func(handle *sql.DB, buffer [INSERT_CHUNK][]any) error {
+		return insert(handle, "INSERT IGNORE INTO event_snap(id, event_type, channel, author, published) VALUES (?, ?, ?, ?, ?)", buffer)
 	}
 
-	insertContent := func(handle *sql.DB, buffer [INSERT_CHUNK][]any, errs chan error) {
-		if err := insert(handle, "INSERT IGNORE INTO event_message_content(id, content) VALUES (?, ?)", buffer); err != nil {
-			errs <- err
-		}
+	insertContent := func(handle *sql.DB, buffer [INSERT_CHUNK][]any) error {
+		return insert(handle, "INSERT IGNORE INTO event_message_content(id, content) VALUES (?, ?)", buffer)
 	}
 
 	return func(handle *sql.DB, robots *bot.Bot) error {
@@ -92,8 +88,13 @@ func snapEvents(events <-chan *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.B
 					}
 
 					robots.Log.Trace("writing buffers")
-					go insertSnap(handle, bufferSnap, errs)
-					go insertContent(handle, bufferContent, errs)
+					if err := insertSnap(handle, bufferSnap); err != nil {
+						errs <- err
+					}
+
+					if err := insertContent(handle, bufferContent); err != nil {
+						errs <- err
+					}
 				}
 			}()
 		}
