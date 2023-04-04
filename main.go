@@ -51,7 +51,7 @@ func onChannelInvite(_ *sql.DB, robot *bot.Bot) error {
 	return err
 }
 
-var tChannelSeq = func() int {
+var threadChannelSeq = func() int {
 	if v, err := strconv.Atoi(os.Getenv("IFUNNY_CHANNEL_SEQ_THREADS")); err != nil {
 		return 8
 	} else {
@@ -59,9 +59,17 @@ var tChannelSeq = func() int {
 	}
 }()
 
-var tEventHist = func() int {
+var threadEventHist = func() int {
 	if v, err := strconv.Atoi(os.Getenv("IFUNNY_EVENT_HIST_THREADS")); err != nil {
 		return 64
+	} else {
+		return v
+	}
+}()
+
+var threadEventSnap = func() int {
+	if v, err := strconv.Atoi(os.Getenv("IFUNNY_EVENT_SNAP_THREADS")); err != nil {
+		return 8
 	} else {
 		return v
 	}
@@ -76,9 +84,9 @@ var forevers = [...]struct {
 	{"onCommand", onCommand},
 	{"onChannelUpdate", onChannelUpdate},
 	{"onChannelInvite", onChannelInvite},
-	{"collectChannelSeq", collectChannelSeq(10*time.Millisecond, collectChannel, tChannelSeq, 0)},
-	{"collectEventHist", collectEventHist(10*time.Millisecond, collectChannel, collectEvent, tEventHist)},
-	{"snapEvents", snapEvents(collectEvent, 8)},
+	{"collectChannelSeq", collectChannelSeq(10*time.Millisecond, collectChannel, threadChannelSeq, 0)},
+	{"collectEventHist", collectEventHist(10*time.Millisecond, collectChannel, collectEvent, threadEventHist)},
+	{"snapEvents", snapEvents(collectEvent, threadEventSnap)},
 }
 
 var tickers = [...]struct {
