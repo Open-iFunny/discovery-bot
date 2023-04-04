@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/gastrodon/popplio/bot"
@@ -51,6 +52,22 @@ func onChannelInvite(_ *sql.DB, robot *bot.Bot) error {
 	return err
 }
 
+var tChannelSeq = func() int {
+	if v, err := strconv.Atoi(os.Getenv("IFUNNY_CHANNEL_SEQ_THREADS")); err != nil {
+		return 8
+	} else {
+		return v
+	}
+}()
+
+var tEventHist = func() int {
+	if v, err := strconv.Atoi(os.Getenv("IFUNNY_EVENT_HIST_THREADS")); err != nil {
+		return 64
+	} else {
+		return v
+	}
+}()
+
 var collectChannel = make(chan string, 32)
 var collectEvent = make(chan *ifunny.ChatEvent)
 var forevers = [...]struct {
@@ -60,8 +77,9 @@ var forevers = [...]struct {
 	{"onCommand", onCommand},
 	{"onChannelUpdate", onChannelUpdate},
 	{"onChannelInvite", onChannelInvite},
-	{"collectChannelSeq", collectChannelSeq(10*time.Millisecond, collectChannel, 8, 0)},
-	{"collectEventHist", collectEventHist(10*time.Millisecond, collectChannel, collectEvent, 24)},
+	{"collectChannelSeq", collectChannelSeq(10*time.Millisecond, collectChannel, tChannelSeq, 0)},
+	{"collectEventHist", collectEventHist(10*time.Millisecond, collectChannel, collectEvent, tEventHist)},
+	{"snapEvents", snapEvents(collectEvent, 8)},
 }
 
 var tickers = [...]struct {

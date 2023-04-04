@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -77,10 +78,15 @@ func makeDB(logger *logrus.Logger) (*sql.DB, error) {
 		}
 	}
 
+	threads, err := strconv.Atoi("IFUNNY_STATS_THREADS")
+	if err != nil {
+		threads = 32
+	}
+
 	mysql.SetLogger(&dblog{logger})
-	handle.SetConnMaxLifetime(1 * time.Second)
-	handle.SetMaxOpenConns(8)
-	handle.SetMaxIdleConns(8)
+	handle.SetConnMaxLifetime(1 * time.Minute)
+	handle.SetMaxOpenConns(threads)
+	handle.SetMaxIdleConns(threads)
 	return handle, nil
 }
 
