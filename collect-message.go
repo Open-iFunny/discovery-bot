@@ -51,9 +51,10 @@ func snapEvents(events <-chan *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.B
 
 		for proc := 0; proc < procs; proc++ {
 			go func() {
+				bufferSnap := [INSERT_CHUNK][]any{}
+				bufferContent := [INSERT_CHUNK][]any{}
+
 				for {
-					bufferSnap := [INSERT_CHUNK][]any{}
-					bufferContent := [INSERT_CHUNK][]any{}
 					for index := range bufferSnap {
 						switch event := <-events; true {
 						case event == nil:
