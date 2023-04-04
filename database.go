@@ -122,7 +122,7 @@ func query(handle *sql.DB, query string, args []any, output ...interface{}) erro
 	return result.Scan(output...)
 }
 
-func insert(handle *sql.DB, query string, data [][]any) error {
+func insert(handle *sql.DB, query string, data [INSERT_CHUNK][]any) error {
 	tx, err := handle.Begin()
 	if err != nil {
 		return err

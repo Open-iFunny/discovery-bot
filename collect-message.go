@@ -34,13 +34,13 @@ func collectEventHist(rate time.Duration, channels <-chan string, events chan<- 
 const INSERT_CHUNK = 10_000
 
 func snapEvents(events <-chan *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.Bot) error {
-	insertSnap := func(handle *sql.DB, buffer [][]any, errs chan error) {
+	insertSnap := func(handle *sql.DB, buffer [INSERT_CHUNK][]any, errs chan error) {
 		if err := insert(handle, "INSERT IGNORE INTO event_snap(id, event_type, channel, author, published) VALUES (?, ?, ?, ?, ?)", buffer); err != nil {
 			errs <- err
 		}
 	}
 
-	insertContent := func(handle *sql.DB, buffer [][]any, errs chan error) {
+	insertContent := func(handle *sql.DB, buffer [INSERT_CHUNK][]any, errs chan error) {
 		if err := insert(handle, "INSERT IGNORE INTO event_message_content(id, content) VALUES (?, ?)", buffer); err != nil {
 			errs <- err
 		}
@@ -52,8 +52,8 @@ func snapEvents(events <-chan *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.B
 		for proc := 0; proc < procs; proc++ {
 			go func() {
 				for {
-					bufferSnap := make([][]any, INSERT_CHUNK)
-					bufferContent := make([][]any, INSERT_CHUNK)
+					bufferSnap := [INSERT_CHUNK][]any{}
+					bufferContent := [INSERT_CHUNK][]any{}
 					for index := range bufferSnap {
 						switch event := <-events; true {
 						case event == nil:
