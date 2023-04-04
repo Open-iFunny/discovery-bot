@@ -36,7 +36,7 @@ func collectEventHist(rate time.Duration, channels <-chan string, events chan<- 
 					}
 
 					log.Trace("iter history")
-					for event := range robot.Chat.IterMessages(compose.ListMessages(channel, 100, compose.NoPage())) {
+					for event := range robot.Chat.IterMessages(compose.ListMessages(channel, 500, compose.NoPage())) {
 						log.WithField("message_id", event.ID).Trace("enqueue event")
 						event.Channel = channel
 						events <- event
@@ -54,7 +54,7 @@ func collectEventHist(rate time.Duration, channels <-chan string, events chan<- 
 	}
 }
 
-const INSERT_CHUNK = 10_000
+const INSERT_CHUNK = 100_000
 
 func snapEvents(events <-chan *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.Bot) error {
 	insertSnap := func(handle *sql.DB, buffer [INSERT_CHUNK][]any) error {
