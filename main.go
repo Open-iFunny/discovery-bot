@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -88,10 +87,6 @@ var tickers = [...]struct {
 	tick     func(*sql.DB, *bot.Bot) error
 }{
 	{"collect-channel-trending", 1 * time.Hour, collectChannelTrending(100*time.Millisecond, collectChannel)},
-}
-
-func init() {
-	runtime.GOMAXPROCS(1)
 }
 
 func main() {
