@@ -11,11 +11,29 @@ import (
 )
 
 func collectEventHist(rate time.Duration, channels <-chan string, events chan<- *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.Bot) error {
-	return func(_ *sql.DB, robot *bot.Bot) error {
+	isFinished := func(handle *sql.DB, channel string) (bool, error) {
+		finished := false
+		err := query(handle, "SELECT finished FROM event_snap_place WHERE channel=?", []any{channel}, &finished)
+		return finished, err
+	}
+
+	markFinished := func(handle *sql.DB, channel string) error {
+		return query(handle, "REPLACE INTO event_snap_place(channel, finished) VALUES (?, ?)", []any{channel, true})
+	}
+
+	return func(handle *sql.DB, robot *bot.Bot) error {
+		errs := make(chan error)
+
 		for proc := 0; proc < procs; proc++ {
 			go func() {
 				for channel := range channels {
 					log := robot.Log.WithField("channel", channel)
+					if finished, err := isFinished(handle, channel); err != nil {
+						errs <- err
+					} else if finished {
+						log.Info("already finished history iter")
+						continue
+					}
 
 					log.Trace("iter history")
 					for event := range robot.Chat.IterMessages(compose.ListMessages(channel, 100, compose.NoPage())) {
@@ -23,11 +41,16 @@ func collectEventHist(rate time.Duration, channels <-chan string, events chan<- 
 						event.Channel = channel
 						events <- event
 					}
+
+					if err := markFinished(handle, channel); err != nil {
+						errs <- err
+						return
+					}
 				}
 			}()
 		}
 
-		return nil
+		return <-errs
 	}
 }
 

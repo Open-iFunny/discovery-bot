@@ -32,8 +32,8 @@ var tableDesc = [...][2]string{
 	{
 		tEventSnapPlace,
 		`channel CHAR(128) UNIQUE PRIMARY KEY NOT NULL,
-		page BIGINT NOT NULL,
-		head CHAR(32) NOT NULL,
+		page BIGINT NOT NULL DEFAULT 0,
+		head CHAR(32) NOT NULL DEFAULT '',
 		finished BOOL NOT NULL DEFAULT FALSE`,
 	},
 	{
