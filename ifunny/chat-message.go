@@ -29,6 +29,8 @@ type ChatEvent struct {
 		IsVerified bool   `json:"is_verified"`
 		LastSeenAt int64  `json:"last_seen_at"`
 	} `json:"user"`
+
+	Channel string
 }
 
 func (chat *Chat) OnChanneEvent(channel string, handle func(event *ChatEvent) error) (func(), error) {
