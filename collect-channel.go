@@ -38,7 +38,7 @@ func countPlace(place string) ([3]int, error) {
 	return parts, nil
 }
 
-func collectChannelSeq(rate time.Duration, channels chan<- string, lock int) func(*sql.DB, *bot.Bot) error {
+func collectChannelSeq(rate time.Duration, channels chan<- string, procs, lock int) func(*sql.DB, *bot.Bot) error {
 	getPlace := func(handle *sql.DB) ([3]int, error) {
 		place := ""
 		if err := query(handle, "SELECT place FROM channel_seq_place WHERE thread_lock=?", []any{lock}, &place); err != nil {
@@ -80,23 +80,30 @@ func collectChannelSeq(rate time.Duration, channels chan<- string, lock int) fun
 			return err
 		}
 
-		for query := range iterQuery(place) {
-			log := robot.Log.WithFields(logrus.Fields{"start_place": place, "query": query})
+		queries := iterQuery(place)
+		errs := make(chan error)
+		for proc := 0; proc < procs; proc++ {
+			go func() {
+				for query := range queries {
+					log := robot.Log.WithFields(logrus.Fields{"start_place": place, "query": query})
 
-			log.Trace("set place")
-			if err := setPlace(handle, query); err != nil {
-				return err
-			}
+					log.Trace("set place")
+					if err := setPlace(handle, query); err != nil {
+						errs <- err
+						return
+					}
 
-			log.Info("iter results")
-			for channel := range robot.Client.IterChannels(compose.ChatsQuery(query, 100, compose.SPage{})) {
-				log.WithField("channel", channel.Name).Trace("enqueue channel result")
-				channels <- channel.Name
-				<-time.Tick(rate)
-			}
+					log.Info("iter results")
+					for channel := range robot.Client.IterChannels(compose.ChatsQuery(query, 100, compose.SPage{})) {
+						log.WithField("channel", channel.Name).Trace("enqueue channel")
+						channels <- channel.Name
+						<-time.Tick(rate)
+					}
+				}
+			}()
 		}
 
-		return nil
+		return <-errs
 	}
 }
 

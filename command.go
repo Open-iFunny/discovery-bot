@@ -59,7 +59,7 @@ func onCommand(_ *sql.DB, robot *bot.Bot) error {
 		return ctx.Send(fmt.Sprintf("Up for %d hours", int(math.Floor(time.Since(startTime).Hours()))))
 	})
 
-	robot.On(prefix.Cmd("snap").And(byID), doHistSnapshot(histChan))
+	robot.On(prefix.Cmd("snap").And(byID), doHistSnapshot(collectChannel))
 
 	return nil
 }

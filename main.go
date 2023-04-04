@@ -51,7 +51,8 @@ func onChannelInvite(_ *sql.DB, robot *bot.Bot) error {
 	return err
 }
 
-var histChan = make(chan string)
+var collectChannel = make(chan string, 32)
+var collectEvent = make(chan *ifunny.ChatEvent)
 var forevers = [...]struct {
 	name string
 	call func(*sql.DB, *bot.Bot) error
@@ -59,7 +60,8 @@ var forevers = [...]struct {
 	{"onCommand", onCommand},
 	{"onChannelUpdate", onChannelUpdate},
 	{"onChannelInvite", onChannelInvite},
-	{"collectChannelSeq", collectChannelSeq(100*time.Millisecond, histChan, 0)},
+	{"collectChannelSeq", collectChannelSeq(10*time.Millisecond, collectChannel, 8, 0)},
+	{"collectEventHist", collectEventHist(10*time.Millisecond, collectChannel, collectEvent, 24)},
 }
 
 var tickers = [...]struct {
@@ -67,7 +69,7 @@ var tickers = [...]struct {
 	interval time.Duration
 	tick     func(*sql.DB, *bot.Bot) error
 }{
-	{"collect-channel-trending", 1 * time.Hour, collectChannelTrending(100*time.Millisecond, histChan)},
+	{"collect-channel-trending", 1 * time.Hour, collectChannelTrending(100*time.Millisecond, collectChannel)},
 }
 
 func init() {
@@ -110,8 +112,17 @@ func main() {
 	}
 
 	go func() {
+		events := 0
+		ticker := time.Tick(1 * time.Second)
+
 		for {
-			fmt.Println(<-histChan)
+			select {
+			case <-collectEvent:
+				events++
+			case <-ticker:
+				fmt.Printf("%d/sec\n", events)
+				events = 0
+			}
 		}
 	}()
 
