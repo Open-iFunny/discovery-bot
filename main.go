@@ -45,7 +45,7 @@ func onChannelUpdate(_ *sql.DB, robot *bot.Bot) error {
 
 func onChannelInvite(_ *sql.DB, robot *bot.Bot) error {
 	_, err := robot.Chat.OnChannelInvite(func(eventType int, channel *ifunny.ChatChannel) error {
-		return robot.Chat.Call(compose.Invite(channel.Name, true), nil)
+		return robot.Chat.Call(compose.InviteResponse(channel.Name, true), nil)
 	})
 
 	return err
