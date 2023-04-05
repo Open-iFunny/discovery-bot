@@ -10,7 +10,14 @@ func inviteCall(accept bool) string {
 	return "invite.decline"
 }
 
-func Invite(channel string, accept bool) turnpike.Call {
+func Invite(channel string, users []string) turnpike.Call {
+	return turnpike.Call{
+		Procedure:   URI("invite.invite"),
+		ArgumentsKw: map[string]interface{}{"chat_name": channel, "users": users},
+	}
+}
+
+func InviteResponse(channel string, accept bool) turnpike.Call {
 	return turnpike.Call{
 		Procedure:   URI(inviteCall(accept)),
 		ArgumentsKw: map[string]interface{}{"chat_name": channel},
