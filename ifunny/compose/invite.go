@@ -27,3 +27,10 @@ func InviteResponse(channel string, accept bool) turnpike.Call {
 func ReceiveInvite(id string) turnpike.Subscribe {
 	return turnpike.Subscribe{Topic: URI("user." + id + ".invites")}
 }
+
+func Kick(channel, user string) turnpike.Call {
+	return turnpike.Call{
+		Procedure:   URI("kick_member"),
+		ArgumentsKw: map[string]interface{}{"user_id": user, "chat_name": channel},
+	}
+}

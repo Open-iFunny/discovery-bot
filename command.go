@@ -84,12 +84,58 @@ func cmdInvite(ctx bot.Context) error {
 	}
 }
 
+func cmdKick(ctx bot.Context) error {
+	event, err := ctx.Event()
+	if err != nil {
+		return err
+	}
+
+	parts := strings.Split(event.Text, " ")
+	switch len(parts) {
+	case 2:
+		channel, err := ctx.Channel()
+		if err != nil {
+			return err
+		}
+
+		target, err := ctx.Robot().Client.GetUser(compose.UserByNick(parts[1]))
+		if err != nil {
+			return err
+		}
+
+		if err := ctx.Robot().Chat.Call(compose.Kick(channel.Name, target.ID), nil); err != nil {
+			return err
+		}
+
+		return ctx.Send(fmt.Sprintf("kicked %s from this channel", target.Nick))
+	case 3:
+		channel, err := ctx.Robot().Chat.GetChannel(compose.GetChannel(parts[2]))
+		if err != nil {
+			return err
+		}
+
+		target, err := ctx.Robot().Client.GetUser(compose.UserByNick(parts[1]))
+		if err != nil {
+			return err
+		}
+
+		if err := ctx.Robot().Chat.Call(compose.Kick(channel.Name, target.ID), nil); err != nil {
+			return err
+		}
+
+		return ctx.Send(fmt.Sprintf("kicked %s from %s", target.Nick, channel.Name))
+	default:
+		return ctx.Send(".kick <user-nick> [channel-id]\nKick a user from this or another channel")
+	}
+}
+
 func onCommand(_ *sql.DB, robot *bot.Bot) error {
 	byID := bot.AuthoredBy(okID)
 	prefix := bot.Prefix(".")
 	robot.On(prefix.Cmd("uptime").And(byID), cmdUptime(time.Now()))
 	robot.On(prefix.Cmd("snap").And(byID), cmdHistSnapshot(collectChannel))
 	robot.On(prefix.Cmd("invite").And(byID), cmdInvite)
+	robot.On(prefix.Cmd("kick").And(byID), cmdKick)
 
 	return nil
 }
