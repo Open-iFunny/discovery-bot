@@ -1,8 +1,8 @@
 package ifunny
 
 import (
-	"github.com/gastrodon/popplio/ifunny/compose"
 	"github.com/gastrodon/turnpike"
+	"github.com/open-ifunny/discovery-bot/ifunny/compose"
 	"github.com/sirupsen/logrus"
 )
 

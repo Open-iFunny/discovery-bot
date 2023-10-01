@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gastrodon/popplio/bot"
-	"github.com/gastrodon/popplio/ifunny"
-	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/open-ifunny/discovery-bot/bot"
+	"github.com/open-ifunny/discovery-bot/ifunny"
+	"github.com/open-ifunny/discovery-bot/ifunny/compose"
 )
 
 func collectEventHist(rate time.Duration, channels <-chan string, events chan<- *ifunny.ChatEvent, procs int) func(*sql.DB, *bot.Bot) error {

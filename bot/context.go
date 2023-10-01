@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"github.com/gastrodon/popplio/ifunny"
-	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/open-ifunny/discovery-bot/ifunny"
+	"github.com/open-ifunny/discovery-bot/ifunny/compose"
 )
 
 type Context interface {

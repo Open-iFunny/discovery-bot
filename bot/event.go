@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"github.com/gastrodon/popplio/ifunny"
 	"github.com/google/uuid"
+	"github.com/open-ifunny/discovery-bot/ifunny"
 )
 
 type filter func(ctx Context) (bool, error)

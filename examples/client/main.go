@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gastrodon/popplio/ifunny"
-	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/open-ifunny/discovery-bot/ifunny"
+	"github.com/open-ifunny/discovery-bot/ifunny/compose"
 )
 
 var bearer = os.Getenv("IFUNNY_BEARER")

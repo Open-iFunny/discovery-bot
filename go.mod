@@ -1,4 +1,4 @@
-module github.com/gastrodon/popplio
+module github.com/open-ifunny/discovery-bot
 
 go 1.19
 

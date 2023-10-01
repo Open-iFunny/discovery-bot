@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gastrodon/popplio/bot"
-	"github.com/gastrodon/popplio/ifunny/compose"
+	"github.com/open-ifunny/discovery-bot/bot"
+	"github.com/open-ifunny/discovery-bot/ifunny/compose"
 
 	_ "github.com/go-sql-driver/mysql"
 )
