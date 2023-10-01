@@ -43,6 +43,22 @@ func HideChannel(channel string) turnpike.Call {
 	}
 }
 
+func CreateChannel(kind ChannelType, id, title, description, coverURL string, invitedIDs []string) turnpike.Call {
+	call := turnpike.Call{
+		Procedure: "create_channel",
+		ArgumentsKw: map[string]interface{}{
+			"type":             kind,
+			"id":               id,
+			"title":            title,
+			"description":      description,
+			"coverURL":         coverURL,
+			"inviteMembersIDs": invitedIDs,
+		},
+	}
+
+	return call
+}
+
 func DMChannelName(self string, them []string) string {
 	us := append(them, self)
 	sort.Strings(us)
