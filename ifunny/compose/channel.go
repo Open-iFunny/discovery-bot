@@ -45,7 +45,7 @@ func HideChannel(channel string) turnpike.Call {
 
 func CreateChannel(kind ChannelType, id, title, description, coverURL string, invitedIDs []string) turnpike.Call {
 	call := turnpike.Call{
-		Procedure: "create_channel",
+		Procedure: URI("create_channel"),
 		ArgumentsKw: map[string]interface{}{
 			"type":             kind,
 			"id":               id,
